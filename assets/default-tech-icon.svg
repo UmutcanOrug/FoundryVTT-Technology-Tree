@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Technology flask">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#243a50"/>
+      <stop offset="1" stop-color="#0c151f"/>
+    </linearGradient>
+    <linearGradient id="liquid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0c878"/>
+      <stop offset="1" stop-color="#b57930"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="32" fill="url(#bg)"/>
+  <circle cx="128" cy="128" r="91" fill="none" stroke="#496681" stroke-width="5"/>
+  <path d="M99 55h58M111 58v54l-43 68c-9 15 2 34 20 34h80c18 0 29-19 20-34l-43-68V58" fill="none" stroke="#dce8f1" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M88 171h80l18 29c4 7-1 14-9 14H79c-8 0-13-7-9-14z" fill="url(#liquid)"/>
+  <circle cx="117" cy="149" r="8" fill="#efd08e"/>
+  <circle cx="145" cy="137" r="6" fill="#efd08e"/>
+</svg>
