@@ -90,6 +90,8 @@
       "NoPlayers": "No player users exist in this world.",
       "ResearchSkill": "Research skill",
       "ResearchSkillHint": "The roll uses this skill from the assigned lead researcher's SWADE character sheet.",
+      "RpOnSuccess": "RP on success",
+      "RpOnSuccessHint": "A successful SWADE skill roll (total 4 or higher) awards this many research points before raises.",
       "RpPerRaise": "RP per raise",
       "RpPerRaiseHint": "Each raise on the SWADE skill roll awards this many research points.",
       "Type": { "Country": "Country", "Facility": "Research Facility", "Personal": "Personal Research" }
@@ -134,6 +136,7 @@
       "BasePoints": "Research points per worker",
       "ProjectCapacity": "Research capacity",
       "ResearchSkill": "Research skill",
+      "RpOnSuccess": "RP on success",
       "RpPerRaise": "RP per raise",
       "CompletedCount": "Completed technologies",
       "ActiveProjects": "Active projects",
@@ -192,6 +195,9 @@
       "ProjectName": "{technology} Research",
       "ProjectLine": "Project: {project} · Technology: {technology}",
       "WeekLine": "Week: {week}",
+      "Success": "Success",
+      "Failure": "Failure",
+      "OutcomeLine": "Result: {outcome}",
       "Raises": "Raises",
       "RaisesLine": "Raises: {raises}",
       "PointsLine": "Research points: +{points}"

@@ -46,6 +46,36 @@ export function swadeRaiseCount(total, targetNumber = 4) {
   return Math.max(0, Math.floor((numericTotal - numericTarget) / 4));
 }
 
+export function swadeResearchAward(total, { targetNumber = 4, rpOnSuccess = 1, rpPerRaise = 1 } = {}) {
+  const numericTotal = Number(total);
+  const numericTarget = Number(targetNumber);
+  if (!Number.isFinite(numericTotal) || !Number.isFinite(numericTarget)) {
+    throw new Error(localize("Errors.InvalidRollTotal"));
+  }
+  const success = numericTotal >= numericTarget;
+  const raiseCount = swadeRaiseCount(numericTotal, numericTarget);
+  const successPoints = Math.max(0, Math.trunc(Number(rpOnSuccess) || 0));
+  const raisePoints = Math.max(0, Math.trunc(Number(rpPerRaise) || 0));
+  return {
+    success,
+    raiseCount,
+    points: (success ? successPoints : 0) + (raiseCount * raisePoints)
+  };
+}
+
+export async function ensureRollEvaluated(roll) {
+  if (!roll) throw new Error(localize("Errors.RollCancelled"));
+  const hasEvaluationState = typeof roll._evaluated === "boolean";
+  const hasUsableTotal = roll.total !== undefined
+    && roll.total !== null
+    && Number.isFinite(Number(roll.total));
+  if (roll._evaluated === false || (!hasEvaluationState && !hasUsableTotal)) {
+    if (typeof roll.evaluate !== "function") throw new Error(localize("Errors.InvalidRollTotal"));
+    return await roll.evaluate({ allowInteractive: false }) ?? roll;
+  }
+  return roll;
+}
+
 export class RollService {
   constructor(store) {
     this.store = store;
@@ -109,6 +139,7 @@ export class RollService {
       mode: evaluated.mode ?? (automatic && moduleConfig.rollMode === ROLL_MODES.MANUAL ? ROLL_MODES.FORMULA : moduleConfig.rollMode),
       skillName: evaluated.skillName ?? "",
       skillSwid: evaluated.skillSwid ?? "",
+      success: evaluated.success ?? false,
       raiseCount: evaluated.raiseCount ?? 0
     };
 
@@ -164,8 +195,8 @@ export class RollService {
       const result = await adapter({ actor, requester, project, technology, entity, automatic });
       const RollClass = globalThis.foundry?.dice?.Roll ?? globalThis.Roll;
       if (RollClass && result instanceof RollClass) {
-        if (result.total === undefined || result.total === null) await result.evaluate({ allowInteractive: false });
-        return { total: Number(result.total), formula: result.formula, roll: result };
+        const roll = await ensureRollEvaluated(result);
+        return { total: Number(roll.total), formula: roll.formula, roll };
       }
       const total = Number(result?.total ?? result);
       if (!Number.isFinite(total)) throw new Error(localize("Errors.AdapterResult"));
@@ -194,7 +225,7 @@ export class RollService {
     const skillLabel = researchSkillLabel(entity.researchSkill, entity.researchSkillName);
     if (!skill) throw new Error(localize("Errors.SkillMissing", { actor: actor.name, skill: skillLabel }));
 
-    const roll = await actor.rollSkill(skill.id, {
+    const pendingRoll = await actor.rollSkill(skill.id, {
       suppressChat: true,
       title: localize("Roll.SkillTitle", { skill: skill.name }),
       flavour: localize("Roll.ProjectLine", {
@@ -202,15 +233,14 @@ export class RollService {
         technology: technology.name
       })
     });
-    if (!roll) throw new Error(localize("Errors.RollCancelled"));
-    if (roll.total === undefined || roll.total === null) await roll.evaluate({ allowInteractive: false });
+    const roll = await ensureRollEvaluated(pendingRoll);
     const total = Number(roll.total);
     if (!Number.isFinite(total)) throw new Error(localize("Errors.InvalidRollTotal"));
-    const raiseCount = swadeRaiseCount(total);
-    const points = raiseCount * Math.max(0, Math.trunc(Number(entity.rpPerRaise) || 0));
+    const { success, raiseCount, points } = swadeResearchAward(total, entity);
     return {
       total,
       points,
+      success,
       raiseCount,
       formula: roll.formula,
       roll,
@@ -224,6 +254,11 @@ export class RollService {
     const rollTitle = record.skillName
       ? localize("Roll.SkillTitle", { skill: record.skillName })
       : localize("Roll.Engineering");
+    const outcomeLine = record.mode === ROLL_MODES.SWADE_SKILL
+      ? `${escapeHtml(localize("Roll.OutcomeLine", {
+        outcome: localize(record.success ? "Roll.Success" : "Roll.Failure")
+      }))}<br>`
+      : "";
     const flavor = `<div class="rtt-chat-roll">
       <strong>${escapeHtml(rollTitle)}</strong><br>
       ${escapeHtml(localize("Roll.EngineerLine", { engineer: actor.name }))}<br>
@@ -232,6 +267,7 @@ export class RollService {
         technology: technology.name
       }))}<br>
       ${escapeHtml(localize("Roll.WeekLine", { week }))}<br>
+      ${outcomeLine}
       ${escapeHtml(localize("Roll.RaisesLine", { raises: record.raiseCount }))}<br>
       ${escapeHtml(localize("Roll.PointsLine", { points: record.points }))}
     </div>`;

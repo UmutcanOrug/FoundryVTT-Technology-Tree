@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { ACTIONS, ActionService } from "../scripts/services/action-service.mjs";
-import { RollService, swadeRaiseCount } from "../scripts/services/roll-service.mjs";
+import {
+  ensureRollEvaluated,
+  RollService,
+  swadeRaiseCount,
+  swadeResearchAward
+} from "../scripts/services/roll-service.mjs";
 import {
   resolveResearchSkill,
   worldResearchSkillChoices
@@ -36,6 +41,40 @@ test("SWADE raises use TN 4 and one raise per additional four points", () => {
   );
 });
 
+test("SWADE success and raise awards are calculated separately", () => {
+  assert.deepEqual(swadeResearchAward(3, { rpOnSuccess: 2, rpPerRaise: 3 }), {
+    success: false, raiseCount: 0, points: 0
+  });
+  assert.deepEqual(swadeResearchAward(7, { rpOnSuccess: 2, rpPerRaise: 3 }), {
+    success: true, raiseCount: 0, points: 2
+  });
+  assert.deepEqual(swadeResearchAward(12, { rpOnSuccess: 2, rpPerRaise: 3 }), {
+    success: true, raiseCount: 2, points: 8
+  });
+});
+
+test("unevaluated SWADE rolls with numeric skill modifiers are evaluated exactly once", async () => {
+  let evaluationCount = 0;
+  const roll = {
+    _evaluated: false,
+    total: 0,
+    formula: "1d6x + 1",
+    async evaluate(options) {
+      evaluationCount += 1;
+      assert.equal(options.allowInteractive, false);
+      this._evaluated = true;
+      this.total = 7;
+      return this;
+    }
+  };
+
+  const evaluated = await ensureRollEvaluated(roll);
+  assert.equal(evaluated.total, 7);
+  assert.equal(evaluationCount, 1);
+  await ensureRollEvaluated(evaluated);
+  assert.equal(evaluationCount, 1);
+});
+
 test("custom skills with duplicate SWIDs resolve by their exact embedded name", () => {
   const actor = {
     items: [
@@ -51,7 +90,7 @@ test("custom skills with duplicate SWIDs resolve by their exact embedded name", 
   assert.equal(choices.find(choice => choice.selected)?.skillName, "Nanobilim (Özel)");
 });
 
-test("SWADE rolls persist raises and per-organization RP", async () => {
+test("SWADE rolls persist success, raises, and per-organization RP", async () => {
   const gm = { id: "gm", isGM: true };
   const skill = { id: "nano", type: "skill", name: "Nanobilim (Özel)", system: { swid: "science" } };
   const actor = {
@@ -67,8 +106,15 @@ test("SWADE rolls persist raises and per-organization RP", async () => {
       assert.equal(skillId, "nano");
       assert.equal(options.suppressChat, true);
       return {
-        total: 12,
-        formula: "1d10x",
+        _evaluated: false,
+        total: 0,
+        formula: "1d10x + 1",
+        async evaluate(evaluateOptions) {
+          assert.equal(evaluateOptions.allowInteractive, false);
+          this._evaluated = true;
+          this.total = 12;
+          return this;
+        },
         async toMessage() {}
       };
     }
@@ -84,7 +130,7 @@ test("SWADE rolls persist raises and per-organization RP", async () => {
     catalog: {
       entities: [{
         id: "entity-1", public: true, allowedUserIds: [], researchSkill: "science",
-        researchSkillName: "Nanobilim (Özel)", rpPerRaise: 3
+        researchSkillName: "Nanobilim (Özel)", rpOnSuccess: 2, rpPerRaise: 3
       }],
       technologies: [{ id: "tech-1", visibility: "public", name: "Nano Tech" }]
     },
@@ -113,8 +159,10 @@ test("SWADE rolls persist raises and per-organization RP", async () => {
   });
 
   assert.equal(record.raiseCount, 2);
-  assert.equal(record.points, 6);
-  assert.equal(envelope.researchState.projects[0].weeklyRolls[1][1].points, 6);
+  assert.equal(record.success, true);
+  assert.equal(record.total, 12);
+  assert.equal(record.points, 8);
+  assert.equal(envelope.researchState.projects[0].weeklyRolls[1][1].points, 8);
 });
 
 test("week reset preserves progress and clears only active-cycle roll data", async () => {
@@ -145,14 +193,33 @@ test("week reset preserves progress and clears only active-cycle roll data", asy
   assert.ok(envelope.researchState.projects[1].weeklyRolls[3]);
 });
 
-test("schema v2 data migrates to v3 with safe entity and roll defaults", () => {
+test("schema v2 data migrates to v4 with safe entity and roll defaults", () => {
   const migrated = migrateWorldEnvelope({
     schemaVersion: 2,
     catalog: { entities: [{ id: "entity-1", name: "Legacy" }] },
     researchState: {},
     moduleConfig: {}
   });
-  assert.equal(migrated.schemaVersion, 3);
+  assert.equal(migrated.schemaVersion, 4);
+  assert.equal(migrated.catalog.entities[0].rpOnSuccess, 1);
   assert.equal(migrated.catalog.entities[0].rpPerRaise, 1);
   assert.equal(migrated.catalog.entities[0].researchSkillName, "");
+});
+
+test("schema v3 migration derives success for existing SWADE roll records", () => {
+  const migrated = migrateWorldEnvelope({
+    schemaVersion: 3,
+    catalog: { entities: [{ id: "entity-1" }] },
+    researchState: {
+      projects: [{
+        id: "project-1",
+        entityId: "entity-1",
+        technologyId: "tech-1",
+        weeklyRolls: { 1: { 1: { total: 7, mode: "swadeSkill" } } }
+      }]
+    },
+    moduleConfig: {}
+  });
+  assert.equal(migrated.catalog.entities[0].rpOnSuccess, 1);
+  assert.equal(migrated.researchState.projects[0].weeklyRolls[1][1].success, true);
 });

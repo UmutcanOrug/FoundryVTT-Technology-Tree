@@ -405,7 +405,7 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
     const storedEntity = catalog.entities.find(item => item.id === editorState.id) ?? {
       id: "", type: editorState.entityType ?? ENTITY_TYPES.COUNTRY, name: "", icon: DEFAULT_ENTITY_ICON,
       banner: "", description: "", lore: "", public: true, allowedUserIds: [], basePointsPerWorker: 1,
-      maxConcurrentProjects: 2, researchSkill: "engineering", researchSkillName: "", rpPerRaise: 1
+      maxConcurrentProjects: 2, researchSkill: "engineering", researchSkillName: "", rpOnSuccess: 1, rpPerRaise: 1
     };
     const skillChoices = worldResearchSkillChoices(storedEntity.researchSkill, storedEntity.researchSkillName);
     const entity = {

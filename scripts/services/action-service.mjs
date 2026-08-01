@@ -541,6 +541,7 @@ function entityFromPayload(payload, fallback) {
     allowedUserIds: payload.allowedUserIds === undefined ? fallback.allowedUserIds : uniqueStrings(payload.allowedUserIds),
     researchSkill: payload.researchSkill ?? fallback.researchSkill,
     researchSkillName: payload.researchSkillName ?? fallback.researchSkillName,
+    rpOnSuccess: payload.rpOnSuccess ?? fallback.rpOnSuccess,
     rpPerRaise: payload.rpPerRaise ?? fallback.rpPerRaise,
     basePointsPerWorker: payload.basePointsPerWorker ?? fallback.basePointsPerWorker,
     maxConcurrentProjects: payload.maxConcurrentProjects ?? fallback.maxConcurrentProjects

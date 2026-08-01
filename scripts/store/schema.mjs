@@ -80,6 +80,7 @@ export function normalizeEntity(raw = {}) {
     modifierIds: uniqueStrings(raw.modifierIds),
     researchSkill: asString(raw.researchSkill, "engineering").toLocaleLowerCase("en-US"),
     researchSkillName: asString(raw.researchSkillName),
+    rpOnSuccess: asInteger(raw.rpOnSuccess, 1, { min: 0 }),
     rpPerRaise: asInteger(raw.rpPerRaise, 1, { min: 0 }),
     basePointsPerWorker: asNumber(raw.basePointsPerWorker, 1, { min: 0 }),
     maxConcurrentProjects: asInteger(raw.maxConcurrentProjects, 2, { min: 0 }),
@@ -179,6 +180,7 @@ export function normalizeWeeklyRolls(raw) {
         mode: asString(value.mode),
         skillName: asString(value.skillName),
         skillSwid: asString(value.skillSwid),
+        success: asBoolean(value.success, asString(value.mode) === ROLL_MODES.SWADE_SKILL && asNumber(value.total, 0) >= 4),
         raiseCount: asInteger(value.raiseCount, 0, { min: 0 })
       };
     }

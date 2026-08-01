@@ -34,6 +34,11 @@ export function migrateWorldEnvelope(raw = {}) {
     version = 3;
   }
 
+  if (version < 4) {
+    envelope = migrateToVersion4(envelope);
+    version = 4;
+  }
+
   const moduleConfig = normalizeModuleConfig(envelope.moduleConfig);
   const researchState = normalizeResearchState(envelope.researchState);
   researchState.history = researchState.history.slice(-moduleConfig.historyLimit);
@@ -72,5 +77,12 @@ function migrateToVersion3(envelope) {
   return {
     ...envelope,
     schemaVersion: 3
+  };
+}
+
+function migrateToVersion4(envelope) {
+  return {
+    ...envelope,
+    schemaVersion: 4
   };
 }

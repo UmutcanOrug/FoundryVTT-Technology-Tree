@@ -1,7 +1,7 @@
 export const MODULE_ID = "research-tech-tree";
 export const MODULE_TITLE = "Research Tech Tree";
-export const MODULE_VERSION = "0.1.2";
-export const SCHEMA_VERSION = 3;
+export const MODULE_VERSION = "0.1.3";
+export const SCHEMA_VERSION = 4;
 export const SOCKET_CHANNEL = `module.${MODULE_ID}`;
 
 export const SETTINGS = Object.freeze({

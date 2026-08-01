@@ -90,6 +90,8 @@
       "NoPlayers": "Bu dünyada oyuncu kullanıcısı yok.",
       "ResearchSkill": "Araştırma skilli",
       "ResearchSkillHint": "Zar, atanmış baş araştırmacının SWADE karakter kağıdındaki bu skill kullanılarak atılır.",
+      "RpOnSuccess": "Başarıda AP",
+      "RpOnSuccessHint": "Başarılı bir SWADE skill zarı (toplam 4 veya üzeri), raiselerden önce bu kadar araştırma puanı kazandırır.",
       "RpPerRaise": "Raise başına AP",
       "RpPerRaiseHint": "SWADE skill zarındaki her raise bu kadar araştırma puanı kazandırır.",
       "Type": { "Country": "Ülke", "Facility": "Araştırma Tesisi", "Personal": "Kişisel Araştırma" }
@@ -134,6 +136,7 @@
       "BasePoints": "Çalışan başına araştırma puanı",
       "ProjectCapacity": "Araştırma kapasitesi",
       "ResearchSkill": "Araştırma skilli",
+      "RpOnSuccess": "Başarıda AP",
       "RpPerRaise": "Raise başına AP",
       "CompletedCount": "Tamamlanan teknolojiler",
       "ActiveProjects": "Devam eden projeler",
@@ -192,6 +195,9 @@
       "ProjectName": "{technology} Araştırması",
       "ProjectLine": "Proje: {project} · Teknoloji: {technology}",
       "WeekLine": "Hafta: {week}",
+      "Success": "Başarı",
+      "Failure": "Başarısızlık",
+      "OutcomeLine": "Sonuç: {outcome}",
       "Raises": "Raise",
       "RaisesLine": "Raise sayısı: {raises}",
       "PointsLine": "Araştırma puanı: +{points}"

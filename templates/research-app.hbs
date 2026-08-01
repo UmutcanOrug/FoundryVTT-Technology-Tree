@@ -166,6 +166,7 @@
               <article><i class="fa-solid fa-users-gear"></i><span>{{localize "RTT.Overview.BasePoints"}}</span><strong>{{selectedEntity.basePointsPerWorker}}</strong></article>
               <article><i class="fa-solid fa-list-check"></i><span>{{localize "RTT.Overview.ProjectCapacity"}}</span><strong>{{overview.capacityText}}</strong></article>
               <article><i class="fa-solid fa-dice"></i><span>{{localize "RTT.Overview.ResearchSkill"}}</span><strong>{{selectedEntity.researchSkillLabel}}</strong></article>
+              <article><i class="fa-solid fa-check"></i><span>{{localize "RTT.Overview.RpOnSuccess"}}</span><strong>{{selectedEntity.rpOnSuccess}}</strong></article>
               <article><i class="fa-solid fa-arrow-trend-up"></i><span>{{localize "RTT.Overview.RpPerRaise"}}</span><strong>{{selectedEntity.rpPerRaise}}</strong></article>
               <article><i class="fa-solid fa-circle-check"></i><span>{{localize "RTT.Overview.CompletedCount"}}</span><strong>{{overview.completedCount}}</strong></article>
               <article><i class="fa-solid fa-flask"></i><span>{{localize "RTT.Overview.ActiveProjects"}}</span><strong>{{overview.projects.length}}</strong></article>
@@ -290,7 +291,7 @@
                   {{#if canManage}}
                     <form data-rtt-form="assignEngineer"><input type="hidden" name="projectId" value="{{projectId}}"><input type="hidden" name="engineerSlot" value="{{slot}}"><select name="actorUuid"><option value="">{{localize "RTT.Project.Unassigned"}}</option>{{#each actorChoices}}<option value="{{uuid}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select><button type="submit" title="{{localize 'RTT.Project.AssignEngineer'}}" aria-label="{{localize 'RTT.Project.AssignEngineer'}}"><i class="fa-solid fa-user-check"></i></button></form>
                   {{/if}}
-                  {{#if roll}}<div class="rtt-roll-result"><span>{{#if roll.skillName}}{{roll.skillName}} · {{/if}}{{localize "RTT.Roll.Total"}}: {{roll.total}} · {{localize "RTT.Roll.Raises"}}: {{roll.raiseCount}}</span><strong>+{{roll.points}} {{localize "RTT.Common.RPAbbreviation"}}</strong></div>{{else}}{{#if canRoll}}<button type="button" class="rtt-roll-button" data-rtt-ui="roll-engineer" data-project-id="{{projectId}}" data-engineer-slot="{{slot}}" data-actor-uuid="{{actorUuid}}" data-current-week="{{currentWeek}}"><i class="fa-solid fa-dice-d20"></i> {{rollLabel}}</button>{{else}}{{#if skillMissing}}<small class="rtt-muted">{{skillError}}</small>{{/if}}{{/if}}{{/if}}
+                  {{#if roll}}<div class="rtt-roll-result"><span>{{#if roll.skillName}}{{roll.skillName}} · {{/if}}{{localize "RTT.Roll.Total"}}: {{roll.total}}{{#if (eq roll.mode "swadeSkill")}} · {{#if roll.success}}{{localize "RTT.Roll.Success"}}{{else}}{{localize "RTT.Roll.Failure"}}{{/if}}{{/if}} · {{localize "RTT.Roll.Raises"}}: {{roll.raiseCount}}</span><strong>+{{roll.points}} {{localize "RTT.Common.RPAbbreviation"}}</strong></div>{{else}}{{#if canRoll}}<button type="button" class="rtt-roll-button" data-rtt-ui="roll-engineer" data-project-id="{{projectId}}" data-engineer-slot="{{slot}}" data-actor-uuid="{{actorUuid}}" data-current-week="{{currentWeek}}"><i class="fa-solid fa-dice-d20"></i> {{rollLabel}}</button>{{else}}{{#if skillMissing}}<small class="rtt-muted">{{skillError}}</small>{{/if}}{{/if}}{{/if}}
                 </article>
               {{/each}}
             </div>
@@ -334,6 +335,7 @@
             <label class="rtt-span-two">{{localize "RTT.Common.Description"}}<textarea name="description" rows="4">{{editor.entity.description}}</textarea></label>
             <label class="rtt-span-two">{{localize "RTT.Entity.Lore"}}<textarea name="lore" rows="4">{{editor.entity.lore}}</textarea></label>
             <label>{{localize "RTT.Overview.BasePoints"}}<input type="number" name="basePointsPerWorker" min="0" step="0.1" value="{{editor.entity.basePointsPerWorker}}"></label>
+            <label>{{localize "RTT.Entity.RpOnSuccess"}}<input type="number" name="rpOnSuccess" min="0" step="1" value="{{editor.entity.rpOnSuccess}}"><small>{{localize "RTT.Entity.RpOnSuccessHint"}}</small></label>
             <label>{{localize "RTT.Entity.RpPerRaise"}}<input type="number" name="rpPerRaise" min="0" step="1" value="{{editor.entity.rpPerRaise}}"><small>{{localize "RTT.Entity.RpPerRaiseHint"}}</small></label>
             <label>{{localize "RTT.Entity.MaxProjects"}}<input type="number" name="maxConcurrentProjects" min="0" step="1" value="{{editor.entity.maxConcurrentProjects}}"></label>
             <label class="rtt-check"><input type="checkbox" name="public" data-bool {{#if editor.entity.public}}checked{{/if}}> {{localize "RTT.Entity.Public"}}</label>

@@ -2,6 +2,22 @@
 
 Research Tech Tree follows [Semantic Versioning](https://semver.org/). Dates use the `YYYY-MM-DD` format.
 
+## [0.1.3] - 2026-08-02
+
+### Added
+
+- Per-organization research points for a successful SWADE roll, independently configurable from the per-raise award.
+- Success or failure state in project roll results and research chat cards.
+
+### Fixed
+
+- Unevaluated SWADE `TraitRoll` results are now evaluated before reading their total, so successes and raises no longer save as zero.
+- Numeric skill modifiers such as `+1` remain part of the native SWADE roll and no longer prevent the result from being recorded.
+
+### Changed
+
+- World schema upgraded to version 4 with a backward-compatible default of 1 RP on success.
+
 ## [0.1.2] - 2026-08-02
 
 ### Added
