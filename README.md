@@ -1,14 +1,14 @@
 # Research Tech Tree
 
-Research Tech Tree, Foundry Virtual Tabletop v13 dünyalarında ülkelerin ve araştırma tesislerinin teknoloji geliştirmesini yönetmek için hazırlanmış, oyun sisteminden bağımsız bir araştırma modülüdür. Dinamik teknoloji kategorileri, ön koşullu teknoloji ağaçları, haftalık projeler, baş mühendis zarları ve araştırma bonus/cezaları aynı çalışma alanında yönetilir.
+Research Tech Tree, Foundry Virtual Tabletop v13 dünyalarında ülkelerin, araştırma tesislerinin ve kişisel araştırmaların teknoloji geliştirmesini yönetir. Dinamik teknoloji kategorileri, ön koşullu teknoloji ağaçları, haftalık projeler, SWADE karakter skill zarları ve araştırma bonus/cezaları aynı çalışma alanında yönetilir.
 
 ## Uyumluluk
 
 - Foundry Virtual Tabletop: v13
 - Minimum sürüm: 13
 - Doğrulanan sürüm: 13.351
-- Modül sürümü: 0.1.0
-- Oyun sistemi bağımlılığı: yok
+- Modül sürümü: 0.1.2
+- Oyun sistemi: SWADE (karakter skilli zar modu için)
 - Zorunlu modül bağımlılığı: yok
 
 Modül native ES modules, ApplicationV2, Handlebars, Foundry settings, module socket, File Picker, Roll ve ChatMessage API'lerini kullanır. Harici CDN veya UI framework kullanmaz.
@@ -59,22 +59,22 @@ game.modules.get("research-tech-tree").api.toggle();
 
 Pencere dört ana bölüme ayrılır:
 
-- Üst araç çubuğu mevcut haftayı, seçili ülke/tesisi, zoom bilgisini ve GM işlemlerini gösterir.
-- Sol panel ülkeleri ve araştırma tesislerini ayrı listeler; arama alanı ve kayıt özetleri sağlar.
+- Üst araç çubuğu mevcut haftayı, seçili araştırma kaydını, zoom bilgisini ve GM işlemlerini gösterir.
+- Sol panel ülkeleri, araştırma tesislerini ve kişisel araştırmaları ayrı listeler; arama alanı ve kayıt özetleri sağlar.
 - Orta alan Genel Bilgi sayfasını veya seçili kategorinin teknoloji ağacını gösterir.
 - Sağ panel seçili teknolojinin ön koşullarını, maliyetini, ilerlemesini, çalışanlarını, mühendislerini ve modifierlarını gösterir.
 
 Teknoloji ağacı boş alandan sürüklenerek kaydırılabilir, mouse tekerleğiyle yakınlaştırılabilir ve **Fit to View** ile görünür düğümlere sığdırılabilir. Teknoloji durumları renk yanında ikon, çerçeve ve metin etiketiyle de ayrılır.
 
-## İlk ülke veya araştırma tesisini oluşturma
+## İlk araştırma kaydını oluşturma
 
 Kalıcı katalog değişiklikleri yalnızca GM tarafından yapılır.
 
 1. `L` ile pencereyi açın.
 2. **Düzenleme Modu**nu etkinleştirin.
 3. Veri yoksa ilk kayıt çağrısını, aksi hâlde entity ekleme düğmesini kullanın.
-4. Tür olarak **Country** veya **Research Facility** seçin.
-5. İsim, açıklama, rol yapma bilgisi, temel çalışan puanı ve aynı anda yürütülebilecek proje sayısını girin.
+4. Tür olarak **Country**, **Research Facility** veya **Personal Research** seçin.
+5. İsim, kullanılacak SWADE araştırma skillini, raise başına kazanılacak araştırma puanını, açıklama, rol yapma bilgisi, temel çalışan puanı ve aynı anda yürütülebilecek proje sayısını girin.
 6. İkon ve banner için Foundry File Picker'ı kullanın.
 7. Herkese açık veya yalnızca seçili kullanıcılara açık görünürlüğü belirleyin.
 8. Kaydedin.
@@ -120,9 +120,9 @@ Bir teknoloji şu koşullarda başlatılabilir:
 
 Teknolojiyi seçip sağ paneldeki **Start Research** düğmesini kullanın. Proje başladıktan sonra çalışan sayısı, iki baş mühendis yuvası, duraklatma, iptal ve manuel ilerleme düzeltmesi aynı panelden yönetilir. Çalışan sayısı sıfır veya pozitif tam sayı olmalıdır.
 
-## Baş mühendis atama ve zar atma
+## Baş araştırmacı atama ve zar atma
 
-Her projede iki baş mühendis yuvası vardır. Mühendisler Foundry Actor UUID'siyle saklanır. Actor sonradan silinirse proje korunur ve ilgili yuva **Missing Actor** olarak gösterilir.
+Her projede iki baş araştırmacı yuvası vardır. Araştırmacılar Foundry Actor UUID'siyle saklanır. Actor sonradan silinirse proje korunur ve ilgili yuva **Missing Actor** olarak gösterilir.
 
 Bir mühendis zarını:
 
@@ -131,7 +131,11 @@ Bir mühendis zarını:
 
 atabilir. Her proje, mühendis yuvası ve hafta için yalnızca bir sonuç kaydedilir. Oyuncu isteği aktif GM'ye modül socket'i üzerinden iletilir; GM proje, hafta, slot, Actor eşleşmesi ve sahipliği yeniden doğrular.
 
-Varsayılan Engineering modu `Formula`, varsayılan formül `1d20` ve varsayılan puan dönüşümü `directTotal`dır. Formula modu Actor'un `getRollData()` verisini kullanabildiği için sistem alanları zar formülünde referanslanabilir. Sonuç, mühendis/proje/teknoloji/hafta ve kazandırılan puan bilgileriyle sohbet mesajına gönderilir.
+Varsayılan zar modu `swadeSkill`dır. Kuruluşta seçilen skill hem SWID hem görünen skill adıyla saklanır; zar anında atanmış baş araştırmacının kendi karakter kağıdındaki embedded Skill öğesi kesin ad, SWID ve geriye uyumlu slug eşleştirmesiyle bulunur. Ardından SWADE `Actor.rollSkill` akışı kullanılır. Böylece Trait Die, Wild Die, ace ve aktördeki SWADE değiştiricileri uygulanır; özel isimli veya standart olmayan SWID kullanan custom skiller de desteklenir.
+
+SWADE sonucunda hedef sayı 4'tür ve hedef üzerindeki her tam 4 puan bir raise sayılır: 4–7 arası 0, 8–11 arası 1, 12–15 arası 2 raise üretir. Kazanılan araştırma puanı `raise sayısı × kuruluşun raise başına AP değeri` olarak hesaplanır. Başarılı fakat raise olmayan zar 0 AP verir. Sonuç; araştırmacı, proje, teknoloji, hafta, raise ve kazanılan puan bilgileriyle proje ekranına ve sohbet mesajına yazılır.
+
+Eski dünyalardaki dokunulmamış `1d20` varsayılanı otomatik taşınır; özellikle özelleştirilmiş Formula, Manual ve System Adapter seçenekleri korunur. `resultBands` yalnızca bu diğer zar modlarının sonuç dönüşümü için kullanılmaya devam eder.
 
 `resultBands` seçildiğinde zar toplamı GM'nin yapılandırdığı aralığa göre araştırma puanına çevrilir.
 
@@ -152,6 +156,8 @@ Yalnızca GM **Advance Week / Haftayı İlerlet** eylemini kullanabilir.
 8. Bütün işlemler başarıyla kaydedildikten sonra hafta bir artar.
 
 Geçmiş varsayılan olarak son 100 haftayla sınırlıdır; limit modül yapılandırmasından değiştirilebilir.
+
+GM üst araç çubuğundaki **Haftayı Sıfırla** düğmesiyle sayacı yeniden 1. haftaya alabilir. Bu işlem aktif projelerin haftalık zarlarını ve işlenmiş hafta geçmişini temizler; mevcut proje ilerlemesini, tamamlanmış teknolojileri ve katalog verisini korur. İşlem uygulanmadan önce açıklayıcı bir onay gösterilir.
 
 ## Buff ve debuff oluşturma
 
@@ -217,7 +223,7 @@ npm run package
 Varsayılan çıktı:
 
 ```text
-dist/research-tech-tree-v0.1.0.zip
+dist/research-tech-tree-v0.1.2.zip
 ```
 
 Paket komutu gerekli manifest girişlerini kontrol eder, yalnızca runtime/dokümantasyon dosyalarını ZIP'e ekler ve SHA-256 özetini ekrana yazar.

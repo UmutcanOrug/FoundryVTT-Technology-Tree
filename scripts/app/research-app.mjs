@@ -262,6 +262,12 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
   }
 
   async #onChange(event) {
+    if (event.target.matches("[data-research-skill-select]")) {
+      const selected = event.target.selectedOptions?.[0];
+      const hidden = event.target.form?.querySelector("[name='researchSkillName']");
+      if (hidden) hidden.value = selected?.dataset.skillName || selected?.textContent?.trim() || "";
+      return;
+    }
     if (!event.target.matches("[data-import-input]")) return;
     const input = event.target;
     const file = input.files?.[0];

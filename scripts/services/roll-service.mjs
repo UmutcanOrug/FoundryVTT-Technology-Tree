@@ -13,6 +13,7 @@ import {
   requireKnownUser,
   validateEngineerRollPermission
 } from "./permission-service.mjs";
+import { researchSkillLabel, resolveResearchSkill } from "./swade-skill-service.mjs";
 
 const systemAdapters = new Map();
 
@@ -33,6 +34,16 @@ export function convertRollTotal(total, config) {
   if (config.resultMethod !== RESULT_METHODS.RESULT_BANDS) return Math.max(0, Math.floor(numericTotal));
   const band = config.resultBands.find(item => numericTotal >= item.min && numericTotal <= item.max);
   return Math.max(0, Math.trunc(Number(band?.points) || 0));
+}
+
+export function swadeRaiseCount(total, targetNumber = 4) {
+  const numericTotal = Number(total);
+  const numericTarget = Number(targetNumber);
+  if (!Number.isFinite(numericTotal) || !Number.isFinite(numericTarget)) {
+    throw new Error(localize("Errors.InvalidRollTotal"));
+  }
+  if (numericTotal < numericTarget) return 0;
+  return Math.max(0, Math.floor((numericTotal - numericTarget) / 4));
 }
 
 export class RollService {
@@ -95,7 +106,10 @@ export class RollService {
       rolledByUserId: requester.id,
       timestamp: Date.now(),
       formula: evaluated.formula ?? "",
-      mode: automatic && moduleConfig.rollMode === ROLL_MODES.MANUAL ? ROLL_MODES.FORMULA : moduleConfig.rollMode
+      mode: evaluated.mode ?? (automatic && moduleConfig.rollMode === ROLL_MODES.MANUAL ? ROLL_MODES.FORMULA : moduleConfig.rollMode),
+      skillName: evaluated.skillName ?? "",
+      skillSwid: evaluated.skillSwid ?? "",
+      raiseCount: evaluated.raiseCount ?? 0
     };
 
     await this.store.transaction("rollEngineer", envelope => {
@@ -140,6 +154,10 @@ export class RollService {
       return { total, formula: localize("Roll.Manual") };
     }
 
+    if (config.rollMode === ROLL_MODES.SWADE_SKILL) {
+      return this.#evaluateSwadeSkill({ actor, project, technology, entity });
+    }
+
     if (config.rollMode === ROLL_MODES.SYSTEM_ADAPTER) {
       const adapter = systemAdapters.get(config.systemAdapterId);
       if (!adapter) throw new Error(localize("Errors.AdapterMissing", { id: config.systemAdapterId || "—" }));
@@ -168,15 +186,53 @@ export class RollService {
     return { total, formula, roll };
   }
 
+  async #evaluateSwadeSkill({ actor, project, technology, entity }) {
+    if (globalThis.game?.system?.id !== "swade" || typeof actor?.rollSkill !== "function") {
+      throw new Error(localize("Errors.SwadeRequired"));
+    }
+    const skill = resolveResearchSkill(actor, entity.researchSkill, entity.researchSkillName);
+    const skillLabel = researchSkillLabel(entity.researchSkill, entity.researchSkillName);
+    if (!skill) throw new Error(localize("Errors.SkillMissing", { actor: actor.name, skill: skillLabel }));
+
+    const roll = await actor.rollSkill(skill.id, {
+      suppressChat: true,
+      title: localize("Roll.SkillTitle", { skill: skill.name }),
+      flavour: localize("Roll.ProjectLine", {
+        project: localize("Roll.ProjectName", { technology: technology.name }),
+        technology: technology.name
+      })
+    });
+    if (!roll) throw new Error(localize("Errors.RollCancelled"));
+    if (roll.total === undefined || roll.total === null) await roll.evaluate({ allowInteractive: false });
+    const total = Number(roll.total);
+    if (!Number.isFinite(total)) throw new Error(localize("Errors.InvalidRollTotal"));
+    const raiseCount = swadeRaiseCount(total);
+    const points = raiseCount * Math.max(0, Math.trunc(Number(entity.rpPerRaise) || 0));
+    return {
+      total,
+      points,
+      raiseCount,
+      formula: roll.formula,
+      roll,
+      mode: ROLL_MODES.SWADE_SKILL,
+      skillName: skill.name,
+      skillSwid: skill.system?.swid ?? entity.researchSkill
+    };
+  }
+
   async #postRollMessage({ actor, entity, technology, project, week, record, roll }) {
+    const rollTitle = record.skillName
+      ? localize("Roll.SkillTitle", { skill: record.skillName })
+      : localize("Roll.Engineering");
     const flavor = `<div class="rtt-chat-roll">
-      <strong>${escapeHtml(localize("Roll.Engineering"))}</strong><br>
+      <strong>${escapeHtml(rollTitle)}</strong><br>
       ${escapeHtml(localize("Roll.EngineerLine", { engineer: actor.name }))}<br>
       ${escapeHtml(localize("Roll.ProjectLine", {
         project: localize("Roll.ProjectName", { technology: technology.name }),
         technology: technology.name
       }))}<br>
       ${escapeHtml(localize("Roll.WeekLine", { week }))}<br>
+      ${escapeHtml(localize("Roll.RaisesLine", { raises: record.raiseCount }))}<br>
       ${escapeHtml(localize("Roll.PointsLine", { points: record.points }))}
     </div>`;
     const messageData = {

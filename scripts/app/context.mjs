@@ -33,6 +33,11 @@ import {
   usersArray
 } from "../services/permission-service.mjs";
 import { isResponsibleGM } from "../store/research-store.mjs";
+import {
+  researchSkillLabel,
+  resolveResearchSkill,
+  worldResearchSkillChoices
+} from "../services/swade-skill-service.mjs";
 
 const STATUS_ICONS = Object.freeze({
   [TECHNOLOGY_STATUS.HIDDEN]: "fa-solid fa-eye-slash",
@@ -60,6 +65,7 @@ export async function buildResearchContext({ store, uiState, weekService }) {
   });
   const countries = entityContexts.filter(entity => entity.type === ENTITY_TYPES.COUNTRY);
   const facilities = entityContexts.filter(entity => entity.type === ENTITY_TYPES.FACILITY);
+  const personalResearch = entityContexts.filter(entity => entity.type === ENTITY_TYPES.PERSONAL);
   const categories = selectedEntity ? categoriesForEntity(selectedEntity, catalog, locale) : [];
   const requestedTab = selectedEntity ? (uiState.activeTabByEntity[selectedEntity.id] ?? "overview") : "overview";
   const activeTab = requestedTab === "overview" || categories.some(category => category.id === requestedTab)
@@ -109,6 +115,7 @@ export async function buildResearchContext({ store, uiState, weekService }) {
     zoomPercent: Math.round(currentView.zoom * 100),
     countries,
     facilities,
+    personalResearch,
     hasVisibleEntities: visibleEntities.length > 0,
     hasAnyEntities: allEntities.length > 0,
     noAccess: allEntities.length > 0 && visibleEntities.length === 0,
@@ -142,7 +149,12 @@ function entityListContext(entity, catalog, state) {
   return {
     ...entity,
     searchText: `${entity.name} ${entity.type}`.toLocaleLowerCase(game.i18n?.lang ?? "en"),
-    typeLabel: localize(entity.type === ENTITY_TYPES.FACILITY ? "Entity.Type.Facility" : "Entity.Type.Country"),
+    typeLabel: localize({
+      [ENTITY_TYPES.COUNTRY]: "Entity.Type.Country",
+      [ENTITY_TYPES.FACILITY]: "Entity.Type.Facility",
+      [ENTITY_TYPES.PERSONAL]: "Entity.Type.Personal"
+    }[entity.type] ?? "Entity.Type.Country"),
+    researchSkillLabel: researchSkillLabel(entity.researchSkill, entity.researchSkillName),
     activeProjectCount: active,
     completedTechnologyCount: completed
   };
@@ -263,6 +275,12 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
   const engineers = project ? await Promise.all(project.engineers.map(async assignment => {
     const actor = await resolveActor(assignment.actorUuid);
     const roll = project.weeklyRolls?.[researchState.currentWeek]?.[assignment.slot] ?? null;
+    const usesSwadeSkill = moduleConfig.rollMode === ROLL_MODES.SWADE_SKILL;
+    const researchSkill = usesSwadeSkill
+      ? resolveResearchSkill(actor, entity.researchSkill, entity.researchSkillName)
+      : null;
+    const skillName = researchSkill?.name ?? researchSkillLabel(entity.researchSkill, entity.researchSkillName);
+    const skillMissing = Boolean(usesSwadeSkill && assignment.actorUuid && actor && !researchSkill);
     const canRoll = Boolean(
       assignment.actorUuid
       && actor
@@ -271,6 +289,7 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
       && !roll
       && userOwnsActor(user, actor)
       && (moduleConfig.rollMode !== ROLL_MODES.MANUAL || user.isGM)
+      && !skillMissing
     );
     return {
       ...assignment,
@@ -279,6 +298,10 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
       missing: Boolean(assignment.actorUuid && !actor),
       roll,
       canRoll,
+      skillName,
+      skillMissing,
+      skillError: skillMissing ? localize("Errors.SkillMissing", { actor: actor.name, skill: skillName }) : "",
+      rollLabel: usesSwadeSkill ? localize("Roll.SkillButton", { skill: skillName }) : localize("Roll.Engineering"),
       canManage: Boolean(user.isGM),
       projectId: project.id,
       currentWeek: researchState.currentWeek,
@@ -379,10 +402,17 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
   const type = editorState.type;
   const base = { ...editorState, type };
   if (type === "entity") {
-    const entity = catalog.entities.find(item => item.id === editorState.id) ?? {
+    const storedEntity = catalog.entities.find(item => item.id === editorState.id) ?? {
       id: "", type: editorState.entityType ?? ENTITY_TYPES.COUNTRY, name: "", icon: DEFAULT_ENTITY_ICON,
       banner: "", description: "", lore: "", public: true, allowedUserIds: [], basePointsPerWorker: 1,
-      maxConcurrentProjects: 2
+      maxConcurrentProjects: 2, researchSkill: "engineering", researchSkillName: "", rpPerRaise: 1
+    };
+    const skillChoices = worldResearchSkillChoices(storedEntity.researchSkill, storedEntity.researchSkillName);
+    const entity = {
+      ...storedEntity,
+      researchSkillName: storedEntity.researchSkillName
+        || skillChoices.find(choice => choice.selected)?.skillName
+        || researchSkillLabel(storedEntity.researchSkill)
     };
     return {
       ...base,
@@ -391,6 +421,8 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
       entity,
       countrySelected: entity.type === ENTITY_TYPES.COUNTRY,
       facilitySelected: entity.type === ENTITY_TYPES.FACILITY,
+      personalSelected: entity.type === ENTITY_TYPES.PERSONAL,
+      skillChoices,
       users: usersArray().filter(user => !user.isGM).map(user => ({ id: user.id, name: user.name, checked: entity.allowedUserIds.includes(user.id) }))
     };
   }

@@ -3,6 +3,7 @@ import {
   MODIFIER_OPERATIONS,
   MODIFIER_SCOPES,
   MODIFIER_TARGETS,
+  PROJECT_STATUS,
   RESULT_METHODS,
   ROLL_MODES,
   TECHNOLOGY_VISIBILITY,
@@ -59,6 +60,7 @@ export const ACTIONS = Object.freeze({
   ADJUST_PROGRESS: "adjustProgress",
   ROLL_ENGINEER: "rollEngineer",
   ADVANCE_WEEK: "advanceWeek",
+  RESET_WEEK: "resetWeek",
   UPDATE_CONFIG: "updateModuleConfig"
 });
 
@@ -120,6 +122,7 @@ export class ActionService {
         return completion;
       }
       case ACTIONS.ADVANCE_WEEK: return this.weekService.advance({ missingRollPolicy: asString(payload.missingRollPolicy), requesterUserId: user.id });
+      case ACTIONS.RESET_WEEK: return this.#resetWeek();
       case ACTIONS.UPDATE_CONFIG: return this.#updateConfig(payload);
       default: throw new Error(localize("Errors.UnsupportedAction", { action }));
     }
@@ -508,6 +511,19 @@ export class ActionService {
       envelope.researchState.history = envelope.researchState.history.slice(-normalized.historyLimit);
     });
   }
+
+  async #resetWeek() {
+    return this.store.transaction("resetWeek", envelope => {
+      envelope.researchState.currentWeek = 1;
+      envelope.researchState.history = [];
+      envelope.researchState.processedRequestIds = [];
+      for (const project of envelope.researchState.projects) {
+        if (project.status !== PROJECT_STATUS.ACTIVE) continue;
+        project.weeklyRolls = {};
+        project.startedWeek = 1;
+      }
+    });
+  }
 }
 
 function entityFromPayload(payload, fallback) {
@@ -523,6 +539,9 @@ function entityFromPayload(payload, fallback) {
     lore: payload.lore ?? fallback.lore,
     public: payload.public === undefined ? fallback.public : asBooleanValue(payload.public),
     allowedUserIds: payload.allowedUserIds === undefined ? fallback.allowedUserIds : uniqueStrings(payload.allowedUserIds),
+    researchSkill: payload.researchSkill ?? fallback.researchSkill,
+    researchSkillName: payload.researchSkillName ?? fallback.researchSkillName,
+    rpPerRaise: payload.rpPerRaise ?? fallback.rpPerRaise,
     basePointsPerWorker: payload.basePointsPerWorker ?? fallback.basePointsPerWorker,
     maxConcurrentProjects: payload.maxConcurrentProjects ?? fallback.maxConcurrentProjects
   });

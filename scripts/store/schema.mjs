@@ -38,7 +38,7 @@ export function defaultResearchState() {
 
 export function defaultModuleConfig() {
   return {
-    rollMode: ROLL_MODES.FORMULA,
+    rollMode: ROLL_MODES.SWADE_SKILL,
     engineeringFormula: "1d20",
     resultMethod: RESULT_METHODS.DIRECT_TOTAL,
     resultBands: [
@@ -63,10 +63,13 @@ export function defaultClientState() {
 export function normalizeEntity(raw = {}) {
   raw = recordOrEmpty(raw);
   const type = asEnum(raw.type, ENTITY_TYPES, ENTITY_TYPES.COUNTRY);
+  const defaultName = type === ENTITY_TYPES.FACILITY
+    ? "Research Facility"
+    : type === ENTITY_TYPES.PERSONAL ? "Personal Research" : "Country";
   return {
     id: asString(raw.id),
     type,
-    name: asString(raw.name, type === ENTITY_TYPES.FACILITY ? "Research Facility" : "Country"),
+    name: asString(raw.name, defaultName),
     icon: asString(raw.icon, DEFAULT_ENTITY_ICON),
     banner: asString(raw.banner),
     description: asText(raw.description),
@@ -75,6 +78,9 @@ export function normalizeEntity(raw = {}) {
     allowedUserIds: uniqueStrings(raw.allowedUserIds),
     categoryIds: uniqueStrings(raw.categoryIds),
     modifierIds: uniqueStrings(raw.modifierIds),
+    researchSkill: asString(raw.researchSkill, "engineering").toLocaleLowerCase("en-US"),
+    researchSkillName: asString(raw.researchSkillName),
+    rpPerRaise: asInteger(raw.rpPerRaise, 1, { min: 0 }),
     basePointsPerWorker: asNumber(raw.basePointsPerWorker, 1, { min: 0 }),
     maxConcurrentProjects: asInteger(raw.maxConcurrentProjects, 2, { min: 0 }),
     sortOrder: asNumber(raw.sortOrder, 0)
@@ -170,7 +176,10 @@ export function normalizeWeeklyRolls(raw) {
         rolledByUserId: asString(value.rolledByUserId),
         timestamp: asNumber(value.timestamp, Date.now()),
         formula: asString(value.formula),
-        mode: asString(value.mode)
+        mode: asString(value.mode),
+        skillName: asString(value.skillName),
+        skillSwid: asString(value.skillSwid),
+        raiseCount: asInteger(value.raiseCount, 0, { min: 0 })
       };
     }
   }

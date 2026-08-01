@@ -17,11 +17,12 @@
     },
     "Header": {
       "Week": "Hafta {week}",
-      "NoSelection": "Ülke veya tesis seçilmedi",
+      "NoSelection": "Ülke, tesis veya kişisel araştırma seçilmedi",
       "Tools": "Araştırma araçları"
     },
     "Common": {
       "AdvanceWeek": "Haftayı İlerlet",
+      "ResetWeek": "Haftayı Sıfırla",
       "Cancel": "İptal",
       "Category": "Kategori",
       "Close": "Kapat",
@@ -55,6 +56,7 @@
     },
     "Tooltips": {
       "AdvanceWeek": "Bu haftanın araştırmasını işle ve sonraki haftaya geç",
+      "ResetWeek": "Hafta sayacını 1. haftaya sıfırla",
       "EditMode": "GM düzenleme kontrollerini etkinleştir",
       "Export": "Bütün araştırma verilerini JSON olarak dışa aktar",
       "FitView": "Bütün teknolojileri görünüme sığdır",
@@ -66,24 +68,31 @@
       "ChooseImage": "Foundry dosya seçicisiyle görsel seç"
     },
     "Sidebar": {
-      "Search": "Ülke ve tesis ara…",
+      "Search": "Araştırma kuruluşlarında ara…",
       "Countries": "Ülkeler",
       "Facilities": "Araştırma Tesisleri",
+      "PersonalResearch": "Kişisel Araştırma",
       "NoCountries": "Henüz ülke yok.",
       "NoFacilities": "Henüz araştırma tesisi yok.",
+      "NoPersonalResearch": "Henüz kişisel araştırma yok.",
       "CountsTooltip": "Aktif projeler / tamamlanan teknolojiler"
     },
     "Tabs": { "Label": "Genel bilgi ve teknoloji kategorileri" },
     "Entity": {
       "AddCountry": "Ülke Ekle",
       "AddFacility": "Araştırma Tesisi Ekle",
+      "AddPersonal": "Kişisel Araştırma Ekle",
       "Banner": "Banner veya büyük resim",
       "Lore": "Tarihçe ve rol yapma bilgisi",
       "MaxProjects": "Azami eşzamanlı proje",
       "Public": "Bütün oyuncular görebilir",
       "AllowedUsers": "Gizliyken izin verilen oyuncular",
       "NoPlayers": "Bu dünyada oyuncu kullanıcısı yok.",
-      "Type": { "Country": "Ülke", "Facility": "Araştırma Tesisi" }
+      "ResearchSkill": "Araştırma skilli",
+      "ResearchSkillHint": "Zar, atanmış baş araştırmacının SWADE karakter kağıdındaki bu skill kullanılarak atılır.",
+      "RpPerRaise": "Raise başına AP",
+      "RpPerRaiseHint": "SWADE skill zarındaki her raise bu kadar araştırma puanı kazandırır.",
+      "Type": { "Country": "Ülke", "Facility": "Araştırma Tesisi", "Personal": "Kişisel Araştırma" }
     },
     "Category": {
       "Add": "Kategori ekle",
@@ -124,6 +133,8 @@
     "Overview": {
       "BasePoints": "Çalışan başına araştırma puanı",
       "ProjectCapacity": "Araştırma kapasitesi",
+      "ResearchSkill": "Araştırma skilli",
+      "RpPerRaise": "Raise başına AP",
       "CompletedCount": "Tamamlanan teknolojiler",
       "ActiveProjects": "Devam eden projeler",
       "Lore": "Tarihçe ve rol yapma",
@@ -148,7 +159,7 @@
     },
     "Empty": {
       "Title": "İlk araştırma kuruluşunuzu oluşturun",
-      "Body": "Bir ülke veya araştırma tesisi ekleyin, ardından kategori ve teknolojileri oluşturun.",
+      "Body": "Bir ülke, araştırma tesisi veya kişisel araştırma ekleyin; ardından kategori ve teknolojileri oluşturun.",
       "NoAccessTitle": "Araştırma erişimi yok",
       "NoAccessBody": "Herhangi bir ülke veya araştırma tesisini görüntüleme izniniz yok."
     },
@@ -157,7 +168,7 @@
       "Start": "Araştırmayı Başlat",
       "StartedWeek": "Başlangıç haftası",
       "EstimatedWeeks": "Tahmini kalan hafta",
-      "EngineerSlot": "Baş Mühendis {slot}",
+      "EngineerSlot": "Baş Araştırmacı {slot}",
       "Unassigned": "Atanmadı",
       "MissingActor": "Eksik Aktör",
       "Paused": "Duraklatıldı",
@@ -165,20 +176,24 @@
       "Resume": "Sürdür",
       "Cancel": "Projeyi iptal et",
       "ManualAdjustment": "Manuel ilerleme düzeltmesi",
-      "AssignEngineer": "Baş mühendis atamasını kaydet",
+      "AssignEngineer": "Baş araştırmacı atamasını kaydet",
       "ApplyAdjustment": "İlerleme düzeltmesini uygula"
     },
     "Roll": {
       "Engineering": "Engineering Zarı",
+      "SkillButton": "{skill} Zarı At",
+      "SkillTitle": "{skill} Zarı",
       "Manual": "Manuel sonuç",
-      "ManualTitle": "Engineering Sonucunu Kaydet",
-      "ManualResult": "Engineering sonucu",
+      "ManualTitle": "Araştırma Zarı Sonucunu Kaydet",
+      "ManualResult": "Araştırma zarı sonucu",
       "Record": "Sonucu kaydet",
       "Total": "Zar toplamı",
-      "EngineerLine": "Mühendis: {engineer}",
+      "EngineerLine": "Araştırmacı: {engineer}",
       "ProjectName": "{technology} Araştırması",
       "ProjectLine": "Proje: {project} · Teknoloji: {technology}",
       "WeekLine": "Hafta: {week}",
+      "Raises": "Raise",
+      "RaisesLine": "Raise sayısı: {raises}",
       "PointsLine": "Araştırma puanı: +{points}"
     },
     "Modifier": {
@@ -213,11 +228,12 @@
       }
     },
     "Config": {
-      "RollMode": "Engineering zar modu",
+      "RollMode": "Araştırma zar modu",
+      "SwadeSkill": "SWADE Karakter Skilli",
       "Formula": "Formül",
       "Manual": "Manuel Sonuç",
       "SystemAdapter": "Sistem Adaptörü",
-      "FormulaLabel": "Varsayılan Engineering formülü",
+      "FormulaLabel": "Yedek zar formülü",
       "ResultMethod": "Sonuç dönüştürme yöntemi",
       "DirectTotal": "Doğrudan Toplam",
       "ResultBands": "Sonuç Aralıkları",
@@ -232,7 +248,7 @@
       "Auto": "Eksik zarları otomatik at"
     },
     "Editor": {
-      "Entity": { "CreateTitle": "Ülke veya Tesis Oluştur", "EditTitle": "Ülke veya Tesisi Düzenle" },
+      "Entity": { "CreateTitle": "Araştırma Kuruluşu Oluştur", "EditTitle": "Araştırma Kuruluşunu Düzenle" },
       "Category": { "CreateTitle": "Teknoloji Kategorisi Oluştur", "EditTitle": "Teknoloji Kategorisini Düzenle", "DeleteTitle": "Teknoloji Kategorisini Sil" },
       "Technology": { "CreateTitle": "Teknoloji Oluştur", "EditTitle": "Teknolojiyi Düzenle" },
       "Modifier": { "CreateTitle": "Araştırma Değiştiricisi Oluştur", "EditTitle": "Araştırma Değiştiricisini Düzenle" },
@@ -245,7 +261,8 @@
       "DeleteCategory": "Bu kategori, seçilen teknoloji işleme seçeneğiyle silinsin mi?",
       "DeleteTechnology": "Bu teknoloji ve ilişkili proje verileri silinsin mi?",
       "DeleteModifier": "Bu değiştirici ve ona giden bütün bağlantılar silinsin mi?",
-      "CancelProject": "Bu araştırma projesi iptal edilsin mi? Denetim kaydı dünya verisinde kalır."
+      "CancelProject": "Bu araştırma projesi iptal edilsin mi? Denetim kaydı dünya verisinde kalır.",
+      "ResetWeek": "Hafta sayacı 1. haftaya sıfırlansın mı? Aktif projelerin haftalık zarları ve işlenmiş hafta geçmişi temizlenir; proje ilerlemeleri korunur."
     },
     "Import": {
       "InvalidJson": "Geçersiz JSON",
@@ -310,9 +327,9 @@
       "InvalidFormula": "“{formula}” geçerli bir zar formülü değil.",
       "InvalidPosition": "Teknoloji koordinatları sonlu sayı olmalıdır.",
       "InvalidProgress": "İlerleme düzeltmesi tam sayı olmalıdır.",
-      "InvalidRollTotal": "Engineering sonucu sonlu bir sayı değil.",
+      "InvalidRollTotal": "Araştırma zarı sonucu sonlu bir sayı değil.",
       "InvalidSocketRequest": "Socket isteği eksik veya geçersiz.",
-      "ManualRollGMOnly": "Manuel Engineering sonuçlarını GM girmelidir.",
+      "ManualRollGMOnly": "Manuel araştırma zarı sonuçlarını GM girmelidir.",
       "MissingActor": "Atanmış mühendis aktörü artık mevcut değil.",
       "MissingRollPolicy": "Eksik mühendis zarlarının nasıl işleneceğini seçin.",
       "ModifierDates": "Değiştiricinin bitiş haftası başlangıç haftasından önce olamaz.",
@@ -330,6 +347,9 @@
       "RecordNotFound": "İstenen kayıt bulunamadı.",
       "ResultBands": "Sonuç aralıkları sıralı ve çakışmayan aralıklar olmalıdır.",
       "RollUnavailable": "Foundry Roll API kullanılamıyor.",
+      "RollCancelled": "SWADE skill zarı iptal edildi.",
+      "SkillMissing": "{actor} karakterinin kağıdında {skill} skilli yok.",
+      "SwadeRequired": "SWADE skill zarları için SWADE oyun sistemi gerekir.",
       "SocketIdentity": "Socket gönderen kimliği istekle eşleşmedi.",
       "SocketTimeout": "Aktif GM işlemi zamanında onaylamadı.",
       "StoreNotReady": "Araştırma verisi henüz hazır değil.",

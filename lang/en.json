@@ -17,11 +17,12 @@
     },
     "Header": {
       "Week": "Week {week}",
-      "NoSelection": "No country or facility selected",
+      "NoSelection": "No country, facility, or personal research selected",
       "Tools": "Research tools"
     },
     "Common": {
       "AdvanceWeek": "Advance Week",
+      "ResetWeek": "Reset Week",
       "Cancel": "Cancel",
       "Category": "Category",
       "Close": "Close",
@@ -55,6 +56,7 @@
     },
     "Tooltips": {
       "AdvanceWeek": "Process this week's research and move to the next week",
+      "ResetWeek": "Reset the week counter to Week 1",
       "EditMode": "Enable GM editing controls",
       "Export": "Export all research data as JSON",
       "FitView": "Fit all technologies in the view",
@@ -66,24 +68,31 @@
       "ChooseImage": "Choose an image with Foundry's file picker"
     },
     "Sidebar": {
-      "Search": "Search countries and facilities…",
+      "Search": "Search research organizations…",
       "Countries": "Countries",
       "Facilities": "Research Facilities",
+      "PersonalResearch": "Personal Research",
       "NoCountries": "No countries yet.",
       "NoFacilities": "No research facilities yet.",
+      "NoPersonalResearch": "No personal research yet.",
       "CountsTooltip": "Active projects / completed technologies"
     },
     "Tabs": { "Label": "Overview and technology categories" },
     "Entity": {
       "AddCountry": "Add Country",
       "AddFacility": "Add Research Facility",
+      "AddPersonal": "Add Personal Research",
       "Banner": "Banner or large image",
       "Lore": "History and roleplay information",
       "MaxProjects": "Maximum concurrent projects",
       "Public": "Visible to all players",
       "AllowedUsers": "Allowed players when private",
       "NoPlayers": "No player users exist in this world.",
-      "Type": { "Country": "Country", "Facility": "Research Facility" }
+      "ResearchSkill": "Research skill",
+      "ResearchSkillHint": "The roll uses this skill from the assigned lead researcher's SWADE character sheet.",
+      "RpPerRaise": "RP per raise",
+      "RpPerRaiseHint": "Each raise on the SWADE skill roll awards this many research points.",
+      "Type": { "Country": "Country", "Facility": "Research Facility", "Personal": "Personal Research" }
     },
     "Category": {
       "Add": "Add category",
@@ -124,6 +133,8 @@
     "Overview": {
       "BasePoints": "Research points per worker",
       "ProjectCapacity": "Research capacity",
+      "ResearchSkill": "Research skill",
+      "RpPerRaise": "RP per raise",
       "CompletedCount": "Completed technologies",
       "ActiveProjects": "Active projects",
       "Lore": "History and roleplay",
@@ -148,7 +159,7 @@
     },
     "Empty": {
       "Title": "Create your first research organization",
-      "Body": "Add a country or research facility, then create categories and technologies.",
+      "Body": "Add a country, research facility, or personal research, then create categories and technologies.",
       "NoAccessTitle": "No research access",
       "NoAccessBody": "You do not have permission to view any country or research facility."
     },
@@ -157,7 +168,7 @@
       "Start": "Start Research",
       "StartedWeek": "Started in week",
       "EstimatedWeeks": "Estimated weeks remaining",
-      "EngineerSlot": "Head Engineer {slot}",
+      "EngineerSlot": "Lead Researcher {slot}",
       "Unassigned": "Unassigned",
       "MissingActor": "Missing Actor",
       "Paused": "Paused",
@@ -165,20 +176,24 @@
       "Resume": "Resume",
       "Cancel": "Cancel project",
       "ManualAdjustment": "Manual progress adjustment",
-      "AssignEngineer": "Save head engineer assignment",
+      "AssignEngineer": "Save lead researcher assignment",
       "ApplyAdjustment": "Apply progress adjustment"
     },
     "Roll": {
       "Engineering": "Engineering Roll",
+      "SkillButton": "Roll {skill}",
+      "SkillTitle": "{skill} Roll",
       "Manual": "Manual result",
-      "ManualTitle": "Record Engineering Result",
-      "ManualResult": "Engineering result",
+      "ManualTitle": "Record Research Roll Result",
+      "ManualResult": "Research roll result",
       "Record": "Record result",
       "Total": "Roll total",
-      "EngineerLine": "Engineer: {engineer}",
+      "EngineerLine": "Researcher: {engineer}",
       "ProjectName": "{technology} Research",
       "ProjectLine": "Project: {project} · Technology: {technology}",
       "WeekLine": "Week: {week}",
+      "Raises": "Raises",
+      "RaisesLine": "Raises: {raises}",
       "PointsLine": "Research points: +{points}"
     },
     "Modifier": {
@@ -213,11 +228,12 @@
       }
     },
     "Config": {
-      "RollMode": "Engineering roll mode",
+      "RollMode": "Research roll mode",
+      "SwadeSkill": "SWADE Character Skill",
       "Formula": "Formula",
       "Manual": "Manual Result",
       "SystemAdapter": "System Adapter",
-      "FormulaLabel": "Default Engineering formula",
+      "FormulaLabel": "Fallback formula",
       "ResultMethod": "Result conversion",
       "DirectTotal": "Direct Total",
       "ResultBands": "Result Bands",
@@ -232,7 +248,7 @@
       "Auto": "Roll missing automatically"
     },
     "Editor": {
-      "Entity": { "CreateTitle": "Create Country or Facility", "EditTitle": "Edit Country or Facility" },
+      "Entity": { "CreateTitle": "Create Research Organization", "EditTitle": "Edit Research Organization" },
       "Category": { "CreateTitle": "Create Technology Category", "EditTitle": "Edit Technology Category", "DeleteTitle": "Delete Technology Category" },
       "Technology": { "CreateTitle": "Create Technology", "EditTitle": "Edit Technology" },
       "Modifier": { "CreateTitle": "Create Research Modifier", "EditTitle": "Edit Research Modifier" },
@@ -245,7 +261,8 @@
       "DeleteCategory": "Delete this category using the selected technology handling option?",
       "DeleteTechnology": "Delete this technology and its associated project data?",
       "DeleteModifier": "Delete this modifier and remove all links to it?",
-      "CancelProject": "Cancel this research project? Its audit record will remain in world data."
+      "CancelProject": "Cancel this research project? Its audit record will remain in world data.",
+      "ResetWeek": "Reset the counter to Week 1? Weekly rolls for active projects and processed-week history will be cleared; project progress is preserved."
     },
     "Import": {
       "InvalidJson": "Invalid JSON",
@@ -310,9 +327,9 @@
       "InvalidFormula": "“{formula}” is not a valid roll formula.",
       "InvalidPosition": "Technology coordinates must be finite numbers.",
       "InvalidProgress": "Progress adjustment must be an integer.",
-      "InvalidRollTotal": "The Engineering result is not a finite number.",
+      "InvalidRollTotal": "The research roll result is not a finite number.",
       "InvalidSocketRequest": "The socket request is incomplete or invalid.",
-      "ManualRollGMOnly": "Manual Engineering results must be entered by a GM.",
+      "ManualRollGMOnly": "Manual research roll results must be entered by a GM.",
       "MissingActor": "The assigned engineer actor no longer exists.",
       "MissingRollPolicy": "Choose how to handle missing engineer rolls.",
       "ModifierDates": "Modifier end week cannot be earlier than its start week.",
@@ -330,6 +347,9 @@
       "RecordNotFound": "The requested record was not found.",
       "ResultBands": "Result bands must be ordered, non-overlapping ranges.",
       "RollUnavailable": "Foundry's Roll API is unavailable.",
+      "RollCancelled": "The SWADE skill roll was cancelled.",
+      "SkillMissing": "{actor} does not have the {skill} skill on their character sheet.",
+      "SwadeRequired": "SWADE skill rolls require the SWADE game system.",
       "SocketIdentity": "The socket sender identity did not match the request.",
       "SocketTimeout": "The active GM did not confirm the action in time.",
       "StoreNotReady": "Research data is not ready yet.",

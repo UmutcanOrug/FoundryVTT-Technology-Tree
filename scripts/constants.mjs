@@ -1,7 +1,7 @@
 export const MODULE_ID = "research-tech-tree";
 export const MODULE_TITLE = "Research Tech Tree";
-export const MODULE_VERSION = "0.1.0";
-export const SCHEMA_VERSION = 1;
+export const MODULE_VERSION = "0.1.2";
+export const SCHEMA_VERSION = 3;
 export const SOCKET_CHANNEL = `module.${MODULE_ID}`;
 
 export const SETTINGS = Object.freeze({
@@ -15,7 +15,8 @@ export const SETTINGS = Object.freeze({
 
 export const ENTITY_TYPES = Object.freeze({
   COUNTRY: "country",
-  FACILITY: "facility"
+  FACILITY: "facility",
+  PERSONAL: "personal"
 });
 
 export const TECHNOLOGY_VISIBILITY = Object.freeze({
@@ -39,6 +40,7 @@ export const PROJECT_STATUS = Object.freeze({
 });
 
 export const ROLL_MODES = Object.freeze({
+  SWADE_SKILL: "swadeSkill",
   FORMULA: "formula",
   MANUAL: "manual",
   SYSTEM_ADAPTER: "systemAdapter"

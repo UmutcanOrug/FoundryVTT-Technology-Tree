@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION } from "../constants.mjs";
+import { ROLL_MODES, SCHEMA_VERSION } from "../constants.mjs";
 import {
   normalizeCatalog,
   normalizeModuleConfig,
@@ -24,6 +24,16 @@ export function migrateWorldEnvelope(raw = {}) {
     version = 1;
   }
 
+  if (version < 2) {
+    envelope = migrateToVersion2(envelope);
+    version = 2;
+  }
+
+  if (version < 3) {
+    envelope = migrateToVersion3(envelope);
+    version = 3;
+  }
+
   const moduleConfig = normalizeModuleConfig(envelope.moduleConfig);
   const researchState = normalizeResearchState(envelope.researchState);
   researchState.history = researchState.history.slice(-moduleConfig.historyLimit);
@@ -42,5 +52,25 @@ function migrateToVersion1(envelope) {
     catalog: envelope.catalog ?? {},
     researchState: envelope.researchState ?? {},
     moduleConfig: envelope.moduleConfig ?? {}
+  };
+}
+
+function migrateToVersion2(envelope) {
+  const moduleConfig = { ...(envelope.moduleConfig ?? {}) };
+  const usesUntouchedDefaultFormula = !moduleConfig.rollMode
+    || (moduleConfig.rollMode === ROLL_MODES.FORMULA
+      && (!moduleConfig.engineeringFormula || moduleConfig.engineeringFormula === "1d20"));
+  if (usesUntouchedDefaultFormula) moduleConfig.rollMode = ROLL_MODES.SWADE_SKILL;
+  return {
+    ...envelope,
+    schemaVersion: 2,
+    moduleConfig
+  };
+}
+
+function migrateToVersion3(envelope) {
+  return {
+    ...envelope,
+    schemaVersion: 3
   };
 }

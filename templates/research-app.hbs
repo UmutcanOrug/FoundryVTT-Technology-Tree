@@ -22,6 +22,9 @@
         <button type="button" data-rtt-ui="advance-week" title="{{localize 'RTT.Tooltips.AdvanceWeek'}}">
           <i class="fa-solid fa-calendar-plus"></i><span>{{localize "RTT.Common.AdvanceWeek"}}</span>
         </button>
+        <button type="button" data-rtt-action="resetWeek" data-confirm-key="RTT.Confirm.ResetWeek" title="{{localize 'RTT.Tooltips.ResetWeek'}}">
+          <i class="fa-solid fa-calendar-xmark"></i><span>{{localize "RTT.Common.ResetWeek"}}</span>
+        </button>
         <button type="button" data-rtt-ui="toggle-edit" class="{{#if editMode}}is-active{{/if}}" title="{{localize 'RTT.Tooltips.EditMode'}}">
           <i class="fa-solid fa-pen-ruler"></i><span>{{localize "RTT.Common.EditMode"}}</span>
         </button>
@@ -103,6 +106,35 @@
           <button type="button" class="rtt-add-row" data-rtt-ui="open-editor" data-editor-type="entity" data-entity-type="facility"><i class="fa-solid fa-plus"></i> {{localize "RTT.Entity.AddFacility"}}</button>
         {{/if}}
       </details>
+
+      <details open class="rtt-entity-group">
+        <summary><span><i class="fa-solid fa-user-graduate"></i> {{localize "RTT.Sidebar.PersonalResearch"}}</span><span>{{personalResearch.length}}</span></summary>
+        <div class="rtt-entity-list">
+          {{#each personalResearch}}
+            <div class="rtt-entity-row {{#if (eq id ../selectedEntity.id)}}is-selected{{/if}}" data-entity-row data-search-text="{{searchText}}" {{#if hidden}}hidden{{/if}}>
+              <button type="button" class="rtt-entity-select" data-rtt-ui="select-entity" data-entity-id="{{id}}">
+                <img src="{{icon}}" alt="">
+                <span class="rtt-entity-copy"><strong>{{name}}</strong><small>{{typeLabel}}</small></span>
+                <span class="rtt-entity-counts"><b>{{activeProjectCount}}</b><b>{{completedTechnologyCount}}</b></span>
+              </button>
+              {{#if ../editMode}}
+                <div class="rtt-row-actions">
+                  <button type="button" data-rtt-action="reorderEntity" data-entity-id="{{id}}" data-direction="up" title="{{localize 'RTT.Common.MoveUp'}}"><i class="fa-solid fa-chevron-up"></i></button>
+                  <button type="button" data-rtt-action="reorderEntity" data-entity-id="{{id}}" data-direction="down" title="{{localize 'RTT.Common.MoveDown'}}"><i class="fa-solid fa-chevron-down"></i></button>
+                  <button type="button" data-rtt-ui="open-editor" data-editor-type="entity" data-editor-id="{{id}}" title="{{localize 'RTT.Common.Edit'}}"><i class="fa-solid fa-pen"></i></button>
+                  <button type="button" data-rtt-action="duplicateEntity" data-entity-id="{{id}}" title="{{localize 'RTT.Common.Duplicate'}}"><i class="fa-solid fa-copy"></i></button>
+                  <button type="button" data-rtt-action="deleteEntity" data-entity-id="{{id}}" data-confirm-key="RTT.Confirm.DeleteEntity" title="{{localize 'RTT.Common.Delete'}}"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              {{/if}}
+            </div>
+          {{else}}
+            <p class="rtt-muted">{{localize "RTT.Sidebar.NoPersonalResearch"}}</p>
+          {{/each}}
+        </div>
+        {{#if editMode}}
+          <button type="button" class="rtt-add-row" data-rtt-ui="open-editor" data-editor-type="entity" data-entity-type="personal"><i class="fa-solid fa-plus"></i> {{localize "RTT.Entity.AddPersonal"}}</button>
+        {{/if}}
+      </details>
     </aside>
 
     <main class="rtt-main">
@@ -133,6 +165,8 @@
             <div class="rtt-stat-grid">
               <article><i class="fa-solid fa-users-gear"></i><span>{{localize "RTT.Overview.BasePoints"}}</span><strong>{{selectedEntity.basePointsPerWorker}}</strong></article>
               <article><i class="fa-solid fa-list-check"></i><span>{{localize "RTT.Overview.ProjectCapacity"}}</span><strong>{{overview.capacityText}}</strong></article>
+              <article><i class="fa-solid fa-dice"></i><span>{{localize "RTT.Overview.ResearchSkill"}}</span><strong>{{selectedEntity.researchSkillLabel}}</strong></article>
+              <article><i class="fa-solid fa-arrow-trend-up"></i><span>{{localize "RTT.Overview.RpPerRaise"}}</span><strong>{{selectedEntity.rpPerRaise}}</strong></article>
               <article><i class="fa-solid fa-circle-check"></i><span>{{localize "RTT.Overview.CompletedCount"}}</span><strong>{{overview.completedCount}}</strong></article>
               <article><i class="fa-solid fa-flask"></i><span>{{localize "RTT.Overview.ActiveProjects"}}</span><strong>{{overview.projects.length}}</strong></article>
             </div>
@@ -224,7 +258,7 @@
             <h1>{{localize "RTT.Empty.NoAccessTitle"}}</h1><p>{{localize "RTT.Empty.NoAccessBody"}}</p>
           {{else}}
             <h1>{{localize "RTT.Empty.Title"}}</h1><p>{{localize "RTT.Empty.Body"}}</p>
-            {{#if isGM}}<div><button type="button" data-rtt-ui="open-editor" data-editor-type="entity" data-entity-type="country"><i class="fa-solid fa-flag"></i> {{localize "RTT.Entity.AddCountry"}}</button><button type="button" data-rtt-ui="open-editor" data-editor-type="entity" data-entity-type="facility"><i class="fa-solid fa-building"></i> {{localize "RTT.Entity.AddFacility"}}</button><button type="button" data-rtt-action="createDemoData" data-confirm-key="RTT.Confirm.CreateDemo"><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "RTT.Demo.Create"}}</button></div>{{/if}}
+            {{#if isGM}}<div><button type="button" data-rtt-ui="open-editor" data-editor-type="entity" data-entity-type="country"><i class="fa-solid fa-flag"></i> {{localize "RTT.Entity.AddCountry"}}</button><button type="button" data-rtt-ui="open-editor" data-editor-type="entity" data-entity-type="facility"><i class="fa-solid fa-building"></i> {{localize "RTT.Entity.AddFacility"}}</button><button type="button" data-rtt-ui="open-editor" data-editor-type="entity" data-entity-type="personal"><i class="fa-solid fa-user-graduate"></i> {{localize "RTT.Entity.AddPersonal"}}</button><button type="button" data-rtt-action="createDemoData" data-confirm-key="RTT.Confirm.CreateDemo"><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "RTT.Demo.Create"}}</button></div>{{/if}}
           {{/if}}
         </section>
       {{/if}}
@@ -256,7 +290,7 @@
                   {{#if canManage}}
                     <form data-rtt-form="assignEngineer"><input type="hidden" name="projectId" value="{{projectId}}"><input type="hidden" name="engineerSlot" value="{{slot}}"><select name="actorUuid"><option value="">{{localize "RTT.Project.Unassigned"}}</option>{{#each actorChoices}}<option value="{{uuid}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</select><button type="submit" title="{{localize 'RTT.Project.AssignEngineer'}}" aria-label="{{localize 'RTT.Project.AssignEngineer'}}"><i class="fa-solid fa-user-check"></i></button></form>
                   {{/if}}
-                  {{#if roll}}<div class="rtt-roll-result"><span>{{localize "RTT.Roll.Total"}}: {{roll.total}}</span><strong>+{{roll.points}} {{localize "RTT.Common.RPAbbreviation"}}</strong></div>{{else}}{{#if canRoll}}<button type="button" class="rtt-roll-button" data-rtt-ui="roll-engineer" data-project-id="{{projectId}}" data-engineer-slot="{{slot}}" data-actor-uuid="{{actorUuid}}" data-current-week="{{currentWeek}}"><i class="fa-solid fa-dice-d20"></i> {{localize "RTT.Roll.Engineering"}}</button>{{/if}}{{/if}}
+                  {{#if roll}}<div class="rtt-roll-result"><span>{{#if roll.skillName}}{{roll.skillName}} · {{/if}}{{localize "RTT.Roll.Total"}}: {{roll.total}} · {{localize "RTT.Roll.Raises"}}: {{roll.raiseCount}}</span><strong>+{{roll.points}} {{localize "RTT.Common.RPAbbreviation"}}</strong></div>{{else}}{{#if canRoll}}<button type="button" class="rtt-roll-button" data-rtt-ui="roll-engineer" data-project-id="{{projectId}}" data-engineer-slot="{{slot}}" data-actor-uuid="{{actorUuid}}" data-current-week="{{currentWeek}}"><i class="fa-solid fa-dice-d20"></i> {{rollLabel}}</button>{{else}}{{#if skillMissing}}<small class="rtt-muted">{{skillError}}</small>{{/if}}{{/if}}{{/if}}
                 </article>
               {{/each}}
             </div>
@@ -293,12 +327,14 @@
           <form data-rtt-form="{{editor.action}}" class="rtt-editor-form">
             {{#if editor.entity.id}}<input type="hidden" name="entityId" value="{{editor.entity.id}}">{{/if}}
             <label>{{localize "RTT.Common.Name"}}<input name="name" required maxlength="120" value="{{editor.entity.name}}"></label>
-            <label>{{localize "RTT.Common.Type"}}<select name="type"><option value="country" {{#if editor.countrySelected}}selected{{/if}}>{{localize "RTT.Entity.Type.Country"}}</option><option value="facility" {{#if editor.facilitySelected}}selected{{/if}}>{{localize "RTT.Entity.Type.Facility"}}</option></select></label>
+            <label>{{localize "RTT.Common.Type"}}<select name="type"><option value="country" {{#if editor.countrySelected}}selected{{/if}}>{{localize "RTT.Entity.Type.Country"}}</option><option value="facility" {{#if editor.facilitySelected}}selected{{/if}}>{{localize "RTT.Entity.Type.Facility"}}</option><option value="personal" {{#if editor.personalSelected}}selected{{/if}}>{{localize "RTT.Entity.Type.Personal"}}</option></select></label>
+            <label class="rtt-span-two">{{localize "RTT.Entity.ResearchSkill"}}<select name="researchSkill" required data-research-skill-select>{{#each editor.skillChoices}}<option value="{{value}}" data-skill-name="{{skillName}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select><input type="hidden" name="researchSkillName" value="{{editor.entity.researchSkillName}}"><small>{{localize "RTT.Entity.ResearchSkillHint"}}</small></label>
             <label class="rtt-span-two">{{localize "RTT.Common.Icon"}}<span class="rtt-input-action"><input name="icon" value="{{editor.entity.icon}}"><button type="button" data-rtt-ui="file-picker" data-file-target="icon" title="{{localize 'RTT.Tooltips.ChooseImage'}}" aria-label="{{localize 'RTT.Tooltips.ChooseImage'}}"><i class="fa-solid fa-folder-open"></i></button></span></label>
             <label class="rtt-span-two">{{localize "RTT.Entity.Banner"}}<span class="rtt-input-action"><input name="banner" value="{{editor.entity.banner}}"><button type="button" data-rtt-ui="file-picker" data-file-target="banner" title="{{localize 'RTT.Tooltips.ChooseImage'}}" aria-label="{{localize 'RTT.Tooltips.ChooseImage'}}"><i class="fa-solid fa-folder-open"></i></button></span></label>
             <label class="rtt-span-two">{{localize "RTT.Common.Description"}}<textarea name="description" rows="4">{{editor.entity.description}}</textarea></label>
             <label class="rtt-span-two">{{localize "RTT.Entity.Lore"}}<textarea name="lore" rows="4">{{editor.entity.lore}}</textarea></label>
             <label>{{localize "RTT.Overview.BasePoints"}}<input type="number" name="basePointsPerWorker" min="0" step="0.1" value="{{editor.entity.basePointsPerWorker}}"></label>
+            <label>{{localize "RTT.Entity.RpPerRaise"}}<input type="number" name="rpPerRaise" min="0" step="1" value="{{editor.entity.rpPerRaise}}"><small>{{localize "RTT.Entity.RpPerRaiseHint"}}</small></label>
             <label>{{localize "RTT.Entity.MaxProjects"}}<input type="number" name="maxConcurrentProjects" min="0" step="1" value="{{editor.entity.maxConcurrentProjects}}"></label>
             <label class="rtt-check"><input type="checkbox" name="public" data-bool {{#if editor.entity.public}}checked{{/if}}> {{localize "RTT.Entity.Public"}}</label>
             <fieldset class="rtt-span-two"><legend>{{localize "RTT.Entity.AllowedUsers"}}</legend><input type="hidden" name="allowedUserIds" value="">{{#each editor.users}}<label class="rtt-check"><input type="checkbox" name="allowedUserIds" value="{{id}}" {{#if checked}}checked{{/if}}> {{name}}</label>{{else}}<span class="rtt-muted">{{localize "RTT.Entity.NoPlayers"}}</span>{{/each}}</fieldset>
@@ -361,7 +397,7 @@
         {{/if}}
 
         {{#if (eq editor.type "config")}}
-          <form data-rtt-form="updateModuleConfig" class="rtt-editor-form"><label>{{localize "RTT.Config.RollMode"}}<select name="rollMode"><option value="formula" {{#if (eq editor.config.rollMode "formula")}}selected{{/if}}>{{localize "RTT.Config.Formula"}}</option><option value="manual" {{#if (eq editor.config.rollMode "manual")}}selected{{/if}}>{{localize "RTT.Config.Manual"}}</option><option value="systemAdapter" {{#if (eq editor.config.rollMode "systemAdapter")}}selected{{/if}}>{{localize "RTT.Config.SystemAdapter"}}</option></select></label><label>{{localize "RTT.Config.FormulaLabel"}}<input name="engineeringFormula" value="{{editor.config.engineeringFormula}}"></label><label>{{localize "RTT.Config.ResultMethod"}}<select name="resultMethod"><option value="directTotal" {{#if (eq editor.config.resultMethod "directTotal")}}selected{{/if}}>{{localize "RTT.Config.DirectTotal"}}</option><option value="resultBands" {{#if (eq editor.config.resultMethod "resultBands")}}selected{{/if}}>{{localize "RTT.Config.ResultBands"}}</option></select></label><label>{{localize "RTT.Config.AdapterId"}}<input name="systemAdapterId" value="{{editor.config.systemAdapterId}}"></label><label class="rtt-span-two">{{localize "RTT.Config.ResultBandsJson"}}<textarea name="resultBands" rows="10">{{editor.resultBandsText}}</textarea></label><label>{{localize "RTT.Config.HistoryLimit"}}<input type="number" name="historyLimit" min="1" max="1000" step="1" value="{{editor.config.historyLimit}}"></label><footer><button type="button" data-rtt-ui="close-editor">{{localize "RTT.Common.Cancel"}}</button><button type="submit" class="rtt-primary"><i class="fa-solid fa-floppy-disk"></i> {{localize "RTT.Common.Save"}}</button></footer></form>
+          <form data-rtt-form="updateModuleConfig" class="rtt-editor-form"><label>{{localize "RTT.Config.RollMode"}}<select name="rollMode"><option value="swadeSkill" {{#if (eq editor.config.rollMode "swadeSkill")}}selected{{/if}}>{{localize "RTT.Config.SwadeSkill"}}</option><option value="formula" {{#if (eq editor.config.rollMode "formula")}}selected{{/if}}>{{localize "RTT.Config.Formula"}}</option><option value="manual" {{#if (eq editor.config.rollMode "manual")}}selected{{/if}}>{{localize "RTT.Config.Manual"}}</option><option value="systemAdapter" {{#if (eq editor.config.rollMode "systemAdapter")}}selected{{/if}}>{{localize "RTT.Config.SystemAdapter"}}</option></select></label><label>{{localize "RTT.Config.FormulaLabel"}}<input name="engineeringFormula" value="{{editor.config.engineeringFormula}}"></label><label>{{localize "RTT.Config.ResultMethod"}}<select name="resultMethod"><option value="directTotal" {{#if (eq editor.config.resultMethod "directTotal")}}selected{{/if}}>{{localize "RTT.Config.DirectTotal"}}</option><option value="resultBands" {{#if (eq editor.config.resultMethod "resultBands")}}selected{{/if}}>{{localize "RTT.Config.ResultBands"}}</option></select></label><label>{{localize "RTT.Config.AdapterId"}}<input name="systemAdapterId" value="{{editor.config.systemAdapterId}}"></label><label class="rtt-span-two">{{localize "RTT.Config.ResultBandsJson"}}<textarea name="resultBands" rows="10">{{editor.resultBandsText}}</textarea></label><label>{{localize "RTT.Config.HistoryLimit"}}<input type="number" name="historyLimit" min="1" max="1000" step="1" value="{{editor.config.historyLimit}}"></label><footer><button type="button" data-rtt-ui="close-editor">{{localize "RTT.Common.Cancel"}}</button><button type="submit" class="rtt-primary"><i class="fa-solid fa-floppy-disk"></i> {{localize "RTT.Common.Save"}}</button></footer></form>
         {{/if}}
 
         {{#if (eq editor.type "advanceWeek")}}
