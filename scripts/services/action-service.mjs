@@ -58,6 +58,7 @@ export const ACTIONS = Object.freeze({
   PAUSE_PROJECT: "pauseProject",
   CANCEL_PROJECT: "cancelProject",
   ADJUST_PROGRESS: "adjustProgress",
+  SET_TECHNOLOGY_PROGRESS: "setTechnologyProgress",
   ROLL_ENGINEER: "rollEngineer",
   REROLL_ENGINEER: "rerollEngineer",
   ADVANCE_WEEK: "advanceWeek",
@@ -131,6 +132,15 @@ export class ActionService {
         const completion = await this.projectService.adjustProgress(asString(payload.projectId), payload.adjustment, { absolute: asBooleanValue(payload.absolute) });
         if (completion) await this.weekService.announceCompletions(completion);
         return completion;
+      }
+      case ACTIONS.SET_TECHNOLOGY_PROGRESS: {
+        const result = await this.projectService.setTechnologyProgress(
+          asString(payload.entityId),
+          asString(payload.technologyId),
+          payload.progress
+        );
+        if (result?.completion) await this.weekService.announceCompletions(result.completion);
+        return result;
       }
       case ACTIONS.ADVANCE_WEEK: return this.weekService.advance({ missingRollPolicy: asString(payload.missingRollPolicy), requesterUserId: user.id });
       case ACTIONS.RESET_WEEK: return this.#resetWeek();
@@ -390,7 +400,13 @@ export class ActionService {
     let id;
     await this.store.transaction("createTechnology", envelope => {
       id = createStableId("technology");
-      const technology = technologyFromPayload(payload, { id, sortOrder: envelope.catalog.technologies.length });
+      const entity = envelope.catalog.entities.find(item => item.id === asString(payload.entityId));
+      const technology = technologyFromPayload(payload, {
+        id,
+        sortOrder: envelope.catalog.technologies.length,
+        researchSkill: entity?.researchSkill ?? "engineering",
+        researchSkillName: entity?.researchSkillName ?? ""
+      });
       assertTechnologyMembership(envelope, technology);
       envelope.catalog.technologies.push(technology);
     });
@@ -586,6 +602,8 @@ function technologyFromPayload(payload, fallback) {
     name: requestedName,
     icon: payload.icon ?? fallback.icon,
     description: payload.description ?? fallback.description,
+    researchSkill: payload.researchSkill ?? fallback.researchSkill,
+    researchSkillName: payload.researchSkillName ?? fallback.researchSkillName,
     researchPointCost: payload.researchPointCost ?? fallback.researchPointCost,
     x: payload.x ?? fallback.x,
     y: payload.y ?? fallback.y,

@@ -55,6 +55,7 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
       activeTabByEntity: { ...client.activeTabByEntity },
       viewByTree: { ...client.viewByTree },
       selectedTechnologyId: "",
+      highlightedTechnologyId: "",
       searchQuery: "",
       editMode: false,
       editor: null,
@@ -64,6 +65,7 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
     this.listenerController = null;
     this.renderTimer = null;
     this.persistTimer = null;
+    this.highlightTimer = null;
     this.savedPosition = null;
     this.actionBusy = false;
   }
@@ -89,6 +91,7 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
     this.listenerController?.abort();
     clearTimeout(this.renderTimer);
     clearTimeout(this.persistTimer);
+    clearTimeout(this.highlightTimer);
     this.unsubscribeStore?.();
     this.unsubscribeStore = null;
     this.onClosed?.(this);
@@ -150,11 +153,15 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
           return;
         }
         this.uiState.selectedTechnologyId = target.dataset.technologyId || target.closest("[data-tech-node]")?.dataset.technologyId || "";
+        if (target.dataset.highlightTechnology === "true") {
+          this.#startTechnologyHighlight(this.uiState.selectedTechnologyId);
+        }
         if (target.dataset.categoryId && this.uiState.selectedEntityId) {
           this.uiState.activeTabByEntity[this.uiState.selectedEntityId] = target.dataset.categoryId;
           await this.#persistClientState();
         }
-        this.render({ force: true });
+        await this.render({ force: true });
+        if (target.dataset.highlightTechnology === "true") this.#focusTechnology(this.uiState.selectedTechnologyId);
         break;
       case "toggle-edit":
         if (!game.user.isGM) return;
@@ -502,6 +509,31 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
     view.panY = (viewport.clientHeight - contentHeight * zoom) / 2 - minY * zoom;
     this.#applyTreeTransform(this.element);
     this.#queueViewPersistence();
+  }
+
+  #focusTechnology(technologyId) {
+    const viewport = this.element.querySelector("[data-tree-viewport]");
+    const node = this.element.querySelector(`[data-tech-node][data-technology-id="${cssEscape(technologyId)}"]`);
+    if (!viewport || !node) return;
+    const x = Number(node.dataset.x);
+    const y = Number(node.dataset.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    const view = this.#currentView();
+    view.panX = viewport.clientWidth / 2 - (x + LIMITS.NODE_WIDTH / 2) * view.zoom;
+    view.panY = viewport.clientHeight / 2 - (y + LIMITS.NODE_HEIGHT / 2) * view.zoom;
+    this.#applyTreeTransform(this.element);
+    this.#queueViewPersistence();
+  }
+
+  #startTechnologyHighlight(technologyId) {
+    clearTimeout(this.highlightTimer);
+    this.uiState.highlightedTechnologyId = technologyId;
+    this.highlightTimer = setTimeout(() => {
+      if (this.uiState.highlightedTechnologyId !== technologyId) return;
+      this.uiState.highlightedTechnologyId = "";
+      this.highlightTimer = null;
+      if (this.rendered) this.render({ force: true });
+    }, 7000);
   }
 
   #currentView() {

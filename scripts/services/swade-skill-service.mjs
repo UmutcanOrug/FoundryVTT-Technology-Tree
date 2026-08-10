@@ -1,5 +1,19 @@
 export const DEFAULT_RESEARCH_SKILL = "engineering";
 
+export function technologyResearchSkill(entity = {}, technology = {}) {
+  const technologySkill = normalizeSkillKey(technology?.researchSkill);
+  if (technologySkill) {
+    return {
+      researchSkill: technologySkill,
+      researchSkillName: String(technology?.researchSkillName ?? "").trim()
+    };
+  }
+  return {
+    researchSkill: normalizeSkillKey(entity?.researchSkill) || DEFAULT_RESEARCH_SKILL,
+    researchSkillName: String(entity?.researchSkillName ?? "").trim()
+  };
+}
+
 export function resolveResearchSkill(actor, configuredSkill = DEFAULT_RESEARCH_SKILL, configuredName = "") {
   const key = normalizeSkillKey(configuredSkill);
   const name = normalizeSkillName(configuredName);

@@ -39,6 +39,11 @@ export function migrateWorldEnvelope(raw = {}) {
     version = 4;
   }
 
+  if (version < 5) {
+    envelope = migrateToVersion5(envelope);
+    version = 5;
+  }
+
   const moduleConfig = normalizeModuleConfig(envelope.moduleConfig);
   const researchState = normalizeResearchState(envelope.researchState);
   researchState.history = researchState.history.slice(-moduleConfig.historyLimit);
@@ -84,5 +89,26 @@ function migrateToVersion4(envelope) {
   return {
     ...envelope,
     schemaVersion: 4
+  };
+}
+
+function migrateToVersion5(envelope) {
+  const catalog = envelope.catalog && typeof envelope.catalog === "object" ? envelope.catalog : {};
+  const entities = Array.isArray(catalog.entities) ? catalog.entities : [];
+  const entityById = new Map(entities.map(entity => [String(entity?.id ?? ""), entity]));
+  const technologies = (Array.isArray(catalog.technologies) ? catalog.technologies : []).map(rawTechnology => {
+    const technology = rawTechnology && typeof rawTechnology === "object" ? rawTechnology : {};
+    if (String(technology.researchSkill ?? "").trim()) return { ...technology };
+    const entity = entityById.get(String(technology.entityId ?? ""));
+    return {
+      ...technology,
+      researchSkill: String(entity?.researchSkill ?? "engineering"),
+      researchSkillName: String(entity?.researchSkillName ?? "")
+    };
+  });
+  return {
+    ...envelope,
+    schemaVersion: 5,
+    catalog: { ...catalog, technologies }
   };
 }

@@ -13,7 +13,7 @@ import {
   requireKnownUser,
   validateEngineerRollPermission
 } from "./permission-service.mjs";
-import { researchSkillLabel, resolveResearchSkill } from "./swade-skill-service.mjs";
+import { researchSkillLabel, resolveResearchSkill, technologyResearchSkill } from "./swade-skill-service.mjs";
 
 const systemAdapters = new Map();
 
@@ -349,8 +349,9 @@ export class RollService {
     if (globalThis.game?.system?.id !== "swade" || typeof actor?.rollSkill !== "function") {
       throw new Error(localize("Errors.SwadeRequired"));
     }
-    const skill = resolveResearchSkill(actor, entity.researchSkill, entity.researchSkillName);
-    const skillLabel = researchSkillLabel(entity.researchSkill, entity.researchSkillName);
+    const configuredSkill = technologyResearchSkill(entity, technology);
+    const skill = resolveResearchSkill(actor, configuredSkill.researchSkill, configuredSkill.researchSkillName);
+    const skillLabel = researchSkillLabel(configuredSkill.researchSkill, configuredSkill.researchSkillName);
     if (!skill) throw new Error(localize("Errors.SkillMissing", { actor: actor.name, skill: skillLabel }));
 
     const pendingRoll = await actor.rollSkill(skill.id, {
@@ -381,7 +382,7 @@ export class RollService {
       roll,
       mode: ROLL_MODES.SWADE_SKILL,
       skillName: skill.name,
-      skillSwid: skill.system?.swid ?? entity.researchSkill
+      skillSwid: skill.system?.swid ?? configuredSkill.researchSkill
     };
   }
 

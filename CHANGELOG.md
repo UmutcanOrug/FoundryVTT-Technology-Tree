@@ -2,6 +2,19 @@
 
 Research Tech Tree follows [Semantic Versioning](https://semver.org/). Dates use the `YYYY-MM-DD` format.
 
+## [0.1.6] - 2026-08-10
+
+### Added
+
+- Seven-second pulsing highlights and automatic centering when a prerequisite link is opened.
+- A GM edit-mode control for setting a technology's researched RP directly; reaching its effective RP cost completes the technology through the normal completion workflow.
+- Per-technology SWADE research skill selection in the technology editor.
+
+### Changed
+
+- An organization's general research skill is now the default copied to newly created technologies instead of being the only skill used by the entire tree.
+- Existing technologies receive their organization's configured skill during the schema v5 migration, preserving old-world roll behavior.
+
 ## [0.1.5] - 2026-08-10
 
 ### Added

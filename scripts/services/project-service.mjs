@@ -33,22 +33,12 @@ export class ProjectService {
     await this.store.transaction("startResearch", envelope => {
       this.validateStart(envelope, entityId, technologyId);
       createdId = createStableId("project");
-      envelope.researchState.projects.push({
+      envelope.researchState.projects.push(createProjectRecord({
         id: createdId,
         entityId,
         technologyId,
-        status: PROJECT_STATUS.ACTIVE,
-        progress: 0,
-        assignedWorkers: 0,
-        engineers: [
-          { slot: 1, actorUuid: null },
-          { slot: 2, actorUuid: null }
-        ],
-        weeklyRolls: {},
-        startedWeek: envelope.researchState.currentWeek,
-        completedWeek: null,
-        paused: false
-      });
+        week: envelope.researchState.currentWeek
+      }));
     });
     return createdId;
   }
@@ -116,6 +106,84 @@ export class ProjectService {
     });
     return completion;
   }
+
+  async setTechnologyProgress(entityId, technologyId, progress) {
+    const value = asInteger(progress, NaN);
+    if (!Number.isFinite(value) || value < 0 || Number(progress) !== value) {
+      throw new Error(localize("Errors.InvalidProgress"));
+    }
+    let result = null;
+    await this.store.transaction("setTechnologyProgress", envelope => {
+      const { catalog, researchState } = envelope;
+      const entity = catalog.entities.find(item => item.id === entityId);
+      const technology = catalog.technologies.find(item => item.id === technologyId && item.entityId === entityId);
+      if (!entity || !technology) throw new Error(localize("Errors.TechnologyNotFound"));
+
+      let project = researchState.projects.find(item => item.entityId === entityId
+        && item.technologyId === technologyId
+        && item.status === PROJECT_STATUS.ACTIVE) ?? null;
+      const modifiers = activeModifiersFor(catalog, {
+        week: researchState.currentWeek,
+        entityId,
+        technology,
+        project
+      });
+      const cost = effectiveResearchCost(technology.researchPointCost, modifiers);
+      const targetProgress = Math.min(cost, value);
+
+      if (!project && getCompletedSet(researchState, entityId).has(technologyId) && !technology.repeatable) {
+        throw new Error(localize("Errors.AlreadyCompleted"));
+      }
+      if (!project && targetProgress === 0) {
+        result = { entityId, technologyId, projectId: "", progress: 0, cost, completion: null };
+        return;
+      }
+      if (!project) {
+        if (!prerequisitesMet(technology, researchState)) throw new Error(localize("Errors.Prerequisites"));
+        if (targetProgress < cost) this.validateStart(envelope, entityId, technologyId);
+        project = createProjectRecord({
+          id: createStableId("project"),
+          entityId,
+          technologyId,
+          week: researchState.currentWeek
+        });
+        researchState.projects.push(project);
+      }
+
+      project.progress = targetProgress;
+      const completion = targetProgress >= cost
+        ? completeProjectInEnvelope(envelope, project, technology, researchState.currentWeek)
+        : null;
+      result = {
+        entityId,
+        technologyId,
+        projectId: project.id,
+        progress: targetProgress,
+        cost,
+        completion
+      };
+    });
+    return result;
+  }
+}
+
+function createProjectRecord({ id, entityId, technologyId, week }) {
+  return {
+    id,
+    entityId,
+    technologyId,
+    status: PROJECT_STATUS.ACTIVE,
+    progress: 0,
+    assignedWorkers: 0,
+    engineers: [
+      { slot: 1, actorUuid: null },
+      { slot: 2, actorUuid: null }
+    ],
+    weeklyRolls: {},
+    startedWeek: week,
+    completedWeek: null,
+    paused: false
+  };
 }
 
 export function requireActiveProject(envelope, projectId) {

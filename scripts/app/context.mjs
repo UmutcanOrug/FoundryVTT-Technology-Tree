@@ -36,6 +36,7 @@ import { isResponsibleGM } from "../store/research-store.mjs";
 import {
   researchSkillLabel,
   resolveResearchSkill,
+  technologyResearchSkill,
   worldResearchSkillChoices
 } from "../services/swade-skill-service.mjs";
 
@@ -82,7 +83,10 @@ export async function buildResearchContext({ store, uiState, weekService }) {
     uiState.selectedTechnologyId = "";
   }
   const selectedTechnology = tree?.technologies.find(technology => technology.id === uiState.selectedTechnologyId) ?? null;
-  if (tree) tree.technologies.forEach(technology => { technology.selected = technology.id === uiState.selectedTechnologyId; });
+  if (tree) tree.technologies.forEach(technology => {
+    technology.selected = technology.id === uiState.selectedTechnologyId;
+    technology.highlighted = technology.id === uiState.highlightedTechnologyId;
+  });
   const details = selectedTechnology
     ? await buildTechnologyDetails({
       technologyId: selectedTechnology.id,
@@ -270,6 +274,8 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
   const safeTechnologyIds = new Set(catalog.technologies
     .filter(candidate => canViewTechnology(user, entity, candidate, researchState))
     .map(candidate => candidate.id));
+  const configuredSkill = technologyResearchSkill(entity, technology);
+  const configuredSkillLabel = researchSkillLabel(configuredSkill.researchSkill, configuredSkill.researchSkillName);
   const actorChoices = [...(game.actors ?? [])].map(actor => ({ uuid: actor.uuid, name: actor.name }))
     .sort((left, right) => left.name.localeCompare(right.name, game.i18n?.lang ?? "en"));
   const engineers = project ? await Promise.all(project.engineers.map(async assignment => {
@@ -277,9 +283,9 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
     const roll = project.weeklyRolls?.[researchState.currentWeek]?.[assignment.slot] ?? null;
     const usesSwadeSkill = moduleConfig.rollMode === ROLL_MODES.SWADE_SKILL;
     const researchSkill = usesSwadeSkill
-      ? resolveResearchSkill(actor, entity.researchSkill, entity.researchSkillName)
+      ? resolveResearchSkill(actor, configuredSkill.researchSkill, configuredSkill.researchSkillName)
       : null;
-    const skillName = researchSkill?.name ?? researchSkillLabel(entity.researchSkill, entity.researchSkillName);
+    const skillName = researchSkill?.name ?? configuredSkillLabel;
     const skillMissing = Boolean(usesSwadeSkill && assignment.actorUuid && actor && !researchSkill);
     const actorBennies = Math.max(0, Math.trunc(Number(actor?.bennies) || 0));
     const gmBennies = user.isGM ? Math.max(0, Math.trunc(Number(user?.bennies) || 0)) : 0;
@@ -348,6 +354,7 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
     cost,
     baseCost: technology.researchPointCost,
     costModified: cost !== technology.researchPointCost,
+    researchSkillLabel: configuredSkillLabel,
     progress,
     progressPercent: Math.max(0, Math.min(100, Math.round((progress / Math.max(1, cost)) * 100))),
     prerequisites: prerequisiteIds.filter(id => safeTechnologyIds.has(id)).map(id => catalog.technologies.find(item => item.id === id)).filter(Boolean),
@@ -363,6 +370,7 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
     } : null,
     actorChoices,
     canStart,
+    canSetProgress: Boolean(user.isGM && status !== TECHNOLOGY_STATUS.COMPLETED),
     startBlockedReason: canStart ? "" : startBlockedReason({ user, project, status, technology, researchState, entity, activeProjectCount })
   };
 }
@@ -456,11 +464,20 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
     };
   }
   if (type === "technology") {
-    const technology = catalog.technologies.find(item => item.id === editorState.id) ?? {
+    const storedTechnology = catalog.technologies.find(item => item.id === editorState.id) ?? {
       id: "", entityId: selectedEntity?.id ?? "", categoryId: activeCategory?.id ?? selectedEntity?.categoryIds?.[0] ?? "",
       name: "", icon: DEFAULT_TECH_ICON, description: "", researchPointCost: 10, x: 100, y: 100,
+      researchSkill: selectedEntity?.researchSkill ?? "engineering",
+      researchSkillName: selectedEntity?.researchSkillName ?? "",
       prerequisiteIds: [], tags: [], visibility: TECHNOLOGY_VISIBILITY.PUBLIC, repeatable: false,
       activatedModifierIds: [], onComplete: { activateModifierIds: [], deactivateModifierIds: [] }, sortOrder: 0
+    };
+    const skillChoices = worldResearchSkillChoices(storedTechnology.researchSkill, storedTechnology.researchSkillName);
+    const technology = {
+      ...storedTechnology,
+      researchSkillName: storedTechnology.researchSkillName
+        || skillChoices.find(choice => choice.selected)?.skillName
+        || researchSkillLabel(storedTechnology.researchSkill)
     };
     const entityId = technology.entityId || selectedEntity?.id;
     return {
@@ -468,6 +485,7 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
       title: localize(technology.id ? "Editor.Technology.EditTitle" : "Editor.Technology.CreateTitle"),
       action: technology.id ? "updateTechnology" : "createTechnology",
       technology,
+      skillChoices,
       tagsText: technology.tags.join(", "),
       categories: categoriesForEntity(catalog.entities.find(entity => entity.id === entityId) ?? selectedEntity, catalog, game.i18n?.lang ?? "en")
         .map(category => ({ ...category, selected: category.id === technology.categoryId })),

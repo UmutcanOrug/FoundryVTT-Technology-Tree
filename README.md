@@ -7,7 +7,7 @@ Research Tech Tree, Foundry Virtual Tabletop v13 dünyalarında ülkelerin, ara�
 - Foundry Virtual Tabletop: v13
 - Minimum sürüm: 13
 - Doğrulanan sürüm: 13.351
-- Modül sürümü: 0.1.5
+- Modül sürümü: 0.1.6
 - Oyun sistemi: SWADE (karakter skilli zar modu için)
 - Zorunlu modül bağımlılığı: yok
 
@@ -74,7 +74,7 @@ Kalıcı katalog değişiklikleri yalnızca GM tarafından yapılır.
 2. **Düzenleme Modu**nu etkinleştirin.
 3. Veri yoksa ilk kayıt çağrısını, aksi hâlde entity ekleme düğmesini kullanın.
 4. Tür olarak **Country**, **Research Facility** veya **Personal Research** seçin.
-5. İsim, kullanılacak SWADE araştırma skillini, raise başına kazanılacak araştırma puanını, açıklama, rol yapma bilgisi, temel çalışan puanı ve aynı anda yürütülebilecek proje sayısını girin.
+5. İsim, yeni teknolojiler için varsayılan olacak SWADE araştırma skillini, başarı ve raise başına kazanılacak araştırma puanını, açıklama, rol yapma bilgisi, temel çalışan puanı ve aynı anda yürütülebilecek proje sayısını girin.
 6. İkon ve banner için Foundry File Picker'ı kullanın.
 7. Herkese açık veya yalnızca seçili kullanıcılara açık görünürlüğü belirleyin.
 8. Kaydedin.
@@ -97,7 +97,7 @@ Sol listedeki kayıtlar düzenleme modunda yeniden sıralanabilir. Silme gibi ge
 
 1. Entity ve kategori seçiliyken düzenleme moduna girin.
 2. Teknoloji ekleme eylemini kullanın.
-3. İsim, ikon, açıklama ve Research Point maliyetini girin.
+3. İsim, ikon, açıklama, bu teknolojiye özel SWADE araştırma skillini ve Research Point maliyetini girin. Yeni teknoloji, kuruluşun genel araştırma skillini başlangıç değeri olarak alır; bu değer teknoloji bazında değiştirilebilir.
 4. Görünürlüğü belirleyin:
    - `public`: İzinli oyuncular her durumda görebilir.
    - `hidden`: Yalnızca GM görür.
@@ -108,7 +108,7 @@ Sol listedeki kayıtlar düzenleme modunda yeniden sıralanabilir. Silme gibi ge
 
 Dairesel bağımlılıklar kaydedilmez. Kartlar düzenleme modunda sürüklenebilir; yeni koordinat drag bittiğinde world verisine yazılır ve diğer bağlı istemcilere yansır.
 
-Bir teknolojinin sağ panelde listelenen ön koşulları bağlantı olarak çalışır. Ön koşul adına tıklandığında modül gerekirse kategori sekmesini değiştirir ve ilgili teknolojiyi doğrudan açar.
+Bir teknolojinin sağ panelde listelenen ön koşulları bağlantı olarak çalışır. Ön koşul adına tıklandığında modül gerekirse kategori sekmesini değiştirir, ilgili teknolojiyi ekranın merkezine taşır ve kartı 7 saniye boyunca parlatır.
 
 ## Araştırma projesi başlatma
 
@@ -121,6 +121,8 @@ Bir teknoloji şu koşullarda başlatılabilir:
 - İşlemi yapan kullanıcı GM'dir.
 
 Teknolojiyi seçip sağ paneldeki **Start Research** düğmesini kullanın. Proje başladıktan sonra çalışan sayısı, iki baş mühendis yuvası, duraklatma, iptal ve manuel ilerleme düzeltmesi aynı panelden yönetilir. Çalışan sayısı sıfır veya pozitif tam sayı olmalıdır.
+
+GM, düzenleme modunda seçili teknolojinin araştırılmış AP değerini doğrudan da yazabilir. Girilen değer teknoloji maliyetine ulaştığında proje normal tamamlama akışından geçirilir; teknoloji tamamlanır ve bağlı tamamlama modifierları uygulanır. Kısmi bir değer girildiğinde, gerekiyorsa ön koşul ve aktif proje kapasitesi kurallarına uyan yeni bir proje oluşturulur.
 
 ## Baş araştırmacı atama ve zar atma
 
@@ -229,7 +231,7 @@ npm run package
 Varsayılan çıktı:
 
 ```text
-research-tech-tree-v0.1.5.zip
+research-tech-tree-v0.1.6.zip
 ```
 
 Paket komutu gerekli manifest girişlerini kontrol eder, yalnızca runtime/dokümantasyon dosyalarını ZIP'e ekler ve SHA-256 özetini ekrana yazar.

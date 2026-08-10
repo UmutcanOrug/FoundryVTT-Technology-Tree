@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import { ACTIONS, ActionService } from "../scripts/services/action-service.mjs";
 import {
@@ -19,6 +20,7 @@ import {
 } from "../scripts/services/import-export-service.mjs";
 import { validateEnvelopeIntegrity } from "../scripts/store/integrity.mjs";
 import { migrateWorldEnvelope } from "../scripts/store/migrations.mjs";
+import { ProjectService } from "../scripts/services/project-service.mjs";
 
 function userCollection(...users) {
   return {
@@ -170,10 +172,13 @@ test("SWADE rolls persist success, raises, and per-organization RP", async () =>
   const envelope = {
     catalog: {
       entities: [{
-        id: "entity-1", public: true, allowedUserIds: [], researchSkill: "science",
-        researchSkillName: "Nanobilim (Özel)", rpOnSuccess: 2, rpPerRaise: 3
+        id: "entity-1", public: true, allowedUserIds: [], researchSkill: "engineering",
+        researchSkillName: "Engineering", rpOnSuccess: 2, rpPerRaise: 3
       }],
-      technologies: [{ id: "tech-1", visibility: "public", name: "Nano Tech" }]
+      technologies: [{
+        id: "tech-1", visibility: "public", name: "Nano Tech",
+        researchSkill: "science", researchSkillName: "Nanobilim (Özel)"
+      }]
     },
     researchState: {
       currentWeek: 1,
@@ -327,17 +332,83 @@ test("week reset preserves progress and clears only active-cycle roll data", asy
   assert.ok(envelope.researchState.projects[1].weeklyRolls[3]);
 });
 
-test("schema v2 data migrates to v4 with safe entity and roll defaults", () => {
+test("schema v2 data migrates to v5 and freezes the entity skill onto legacy technologies", () => {
   const migrated = migrateWorldEnvelope({
     schemaVersion: 2,
-    catalog: { entities: [{ id: "entity-1", name: "Legacy" }] },
+    catalog: {
+      entities: [{ id: "entity-1", name: "Legacy", researchSkill: "science", researchSkillName: "Science" }],
+      technologies: [{ id: "tech-1", entityId: "entity-1", name: "Legacy Tech" }]
+    },
     researchState: {},
     moduleConfig: {}
   });
-  assert.equal(migrated.schemaVersion, 4);
+  assert.equal(migrated.schemaVersion, 5);
   assert.equal(migrated.catalog.entities[0].rpOnSuccess, 1);
   assert.equal(migrated.catalog.entities[0].rpPerRaise, 1);
-  assert.equal(migrated.catalog.entities[0].researchSkillName, "");
+  assert.equal(migrated.catalog.technologies[0].researchSkill, "science");
+  assert.equal(migrated.catalog.technologies[0].researchSkillName, "Science");
+});
+
+test("new technologies inherit the entity skill as their editable default", async () => {
+  const gm = { id: "gm", isGM: true };
+  setGame({ users: [gm] });
+  const envelope = migrateWorldEnvelope({
+    schemaVersion: 5,
+    catalog: {
+      entities: [{
+        id: "entity-1", name: "Institute", categoryIds: ["category-1"],
+        researchSkill: "occult", researchSkillName: "Forbidden Lore"
+      }],
+      categories: [{ id: "category-1", name: "Mysteries", entityIds: ["entity-1"] }]
+    },
+    researchState: {},
+    moduleConfig: {}
+  });
+  const store = { transaction: async (_reason, mutator) => mutator(envelope) };
+  const service = new ActionService({ store, projectService: {}, rollService: {}, weekService: {} });
+  await service.handle(ACTIONS.CREATE_TECHNOLOGY, {
+    entityId: "entity-1", categoryId: "category-1", name: "Sealed Archive", researchPointCost: 8
+  }, gm.id);
+  const technology = envelope.catalog.technologies[0];
+  assert.equal(technology.researchSkill, "occult");
+  assert.equal(technology.researchSkillName, "Forbidden Lore");
+});
+
+test("GM-set progress creates a project and completes it at the effective RP cost", async () => {
+  const envelope = migrateWorldEnvelope({
+    schemaVersion: 5,
+    catalog: {
+      entities: [{ id: "entity-1", name: "Institute", categoryIds: ["category-1"], maxConcurrentProjects: 1 }],
+      categories: [{ id: "category-1", name: "Industry", entityIds: ["entity-1"] }],
+      technologies: [{
+        id: "tech-1", entityId: "entity-1", categoryId: "category-1", name: "Precision", researchPointCost: 10
+      }]
+    },
+    researchState: {},
+    moduleConfig: {}
+  });
+  const store = { transaction: async (_reason, mutator) => mutator(envelope) };
+  const service = new ProjectService(store);
+
+  const partial = await service.setTechnologyProgress("entity-1", "tech-1", 6);
+  assert.equal(partial.progress, 6);
+  assert.equal(envelope.researchState.projects[0].status, "active");
+
+  const finished = await service.setTechnologyProgress("entity-1", "tech-1", 10);
+  assert.equal(finished.completion.technologyId, "tech-1");
+  assert.equal(envelope.researchState.projects[0].status, "completed");
+  assert.deepEqual(envelope.researchState.completedTechnologyIdsByEntity["entity-1"], ["tech-1"]);
+  validateEnvelopeIntegrity(envelope);
+});
+
+test("prerequisite navigation marks the destination for a seven-second highlight", () => {
+  const template = readFileSync(new URL("../templates/research-app.hbs", import.meta.url), "utf8");
+  const application = readFileSync(new URL("../scripts/app/research-app.mjs", import.meta.url), "utf8");
+  const stylesheet = readFileSync(new URL("../styles/research-tech-tree.css", import.meta.url), "utf8");
+  assert.match(template, /data-highlight-technology="true"/u);
+  assert.match(template, /is-highlighted/u);
+  assert.match(application, /7000/u);
+  assert.match(stylesheet, /rtt-technology-highlight/u);
 });
 
 test("schema v3 migration derives success for existing SWADE roll records", () => {

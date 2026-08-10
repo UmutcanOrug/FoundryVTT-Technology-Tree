@@ -116,6 +116,8 @@
       "SortOrder": "Sıralama değeri",
       "Cost": "Araştırma Puanı Maliyeti",
       "BaseCost": "Temel maliyet: {cost} AP",
+      "ResearchSkill": "Gerekli araştırma skilli",
+      "ResearchSkillHint": "Bu teknoloji bu SWADE skillini kullanır. Yeni teknolojiler kuruluşun varsayılan araştırma skilliyle başlar.",
       "Visibility": "Görünürlük",
       "X": "X konumu",
       "Y": "Y konumu",
@@ -185,8 +187,10 @@
       "Resume": "Sürdür",
       "Cancel": "Projeyi iptal et",
       "ManualAdjustment": "Manuel ilerleme düzeltmesi",
+      "SetProgress": "Araştırılmış AP'yi ayarla",
       "AssignEngineer": "Baş araştırmacı atamasını kaydet",
-      "ApplyAdjustment": "İlerleme düzeltmesini uygula"
+      "ApplyAdjustment": "İlerleme düzeltmesini uygula",
+      "ApplyProgress": "Araştırılmış AP'yi kaydet"
     },
     "Roll": {
       "Engineering": "Engineering Zarı",

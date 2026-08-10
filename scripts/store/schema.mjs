@@ -110,6 +110,8 @@ export function normalizeTechnology(raw = {}) {
     name: asString(raw.name, "Technology"),
     icon: asString(raw.icon, DEFAULT_TECH_ICON),
     description: asText(raw.description),
+    researchSkill: asString(raw.researchSkill).toLocaleLowerCase("en-US"),
+    researchSkillName: asString(raw.researchSkillName),
     researchPointCost: asInteger(raw.researchPointCost ?? raw.cost, 1, { min: 1 }),
     x: asNumber(raw.x, 80),
     y: asNumber(raw.y, 80),

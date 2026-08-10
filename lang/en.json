@@ -116,6 +116,8 @@
       "SortOrder": "Sort order",
       "Cost": "Research Point Cost",
       "BaseCost": "Base cost: {cost} RP",
+      "ResearchSkill": "Required research skill",
+      "ResearchSkillHint": "This technology uses this SWADE skill. New technologies begin with the organization's default research skill.",
       "Visibility": "Visibility",
       "X": "X position",
       "Y": "Y position",
@@ -185,8 +187,10 @@
       "Resume": "Resume",
       "Cancel": "Cancel project",
       "ManualAdjustment": "Manual progress adjustment",
+      "SetProgress": "Set researched RP",
       "AssignEngineer": "Save lead researcher assignment",
-      "ApplyAdjustment": "Apply progress adjustment"
+      "ApplyAdjustment": "Apply progress adjustment",
+      "ApplyProgress": "Save researched RP"
     },
     "Roll": {
       "Engineering": "Engineering Roll",
