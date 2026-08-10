@@ -281,6 +281,9 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
       : null;
     const skillName = researchSkill?.name ?? researchSkillLabel(entity.researchSkill, entity.researchSkillName);
     const skillMissing = Boolean(usesSwadeSkill && assignment.actorUuid && actor && !researchSkill);
+    const actorBennies = Math.max(0, Math.trunc(Number(actor?.bennies) || 0));
+    const gmBennies = user.isGM ? Math.max(0, Math.trunc(Number(user?.bennies) || 0)) : 0;
+    const availableBennies = actorBennies || gmBennies;
     const canRoll = Boolean(
       assignment.actorUuid
       && actor
@@ -291,6 +294,17 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
       && (moduleConfig.rollMode !== ROLL_MODES.MANUAL || user.isGM)
       && !skillMissing
     );
+    const canBennyReroll = Boolean(
+      roll
+      && roll.mode === ROLL_MODES.SWADE_SKILL
+      && assignment.actorUuid
+      && actor
+      && project.status === PROJECT_STATUS.ACTIVE
+      && !project.paused
+      && userOwnsActor(user, actor)
+      && availableBennies > 0
+      && !skillMissing
+    );
     return {
       ...assignment,
       actorName: actor?.name ?? (assignment.actorUuid ? localize("Project.MissingActor") : localize("Project.Unassigned")),
@@ -298,6 +312,8 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
       missing: Boolean(assignment.actorUuid && !actor),
       roll,
       canRoll,
+      canBennyReroll,
+      availableBennies,
       skillName,
       skillMissing,
       skillError: skillMissing ? localize("Errors.SkillMissing", { actor: actor.name, skill: skillName }) : "",

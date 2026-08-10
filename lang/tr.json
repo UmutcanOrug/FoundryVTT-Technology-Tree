@@ -65,10 +65,12 @@
       "RestoreAll": "Tam yedekten bütün araştırma verilerini geri yükle",
       "FitView": "Bütün teknolojileri görünüme sığdır",
       "Fullscreen": "Tam pencere görünümünü aç veya kapat",
+      "GoToPrerequisite": "{technology} teknolojisine git",
       "Import": "Araştırma Teknoloji Ağacı JSON yedeğini içe aktar",
       "Settings": "Araştırma ve zar ayarları",
       "ZoomIn": "Yakınlaştır",
       "ZoomOut": "Uzaklaştır",
+      "BennyReroll": "Bir Benny harcayıp yeniden at; {count} mevcut",
       "ChooseImage": "Foundry dosya seçicisiyle görsel seç"
     },
     "Sidebar": {
@@ -204,6 +206,9 @@
       "OutcomeLine": "Sonuç: {outcome}",
       "Raises": "Raise",
       "RaisesLine": "Raise sayısı: {raises}",
+      "BennyReroll": "Benny ile Yeniden At",
+      "BennySummary": "Benny yeniden atışı: {count} · Son: {last} · En iyi: {best}",
+      "BennyResultLine": "Benny yeniden atışı: {reroll} · Önceki en iyi: {previous} · Korunan: {best}",
       "PointsLine": "Araştırma puanı: +{points}"
     },
     "Modifier": {
@@ -272,6 +277,7 @@
       "DeleteTechnology": "Bu teknoloji ve ilişkili proje verileri silinsin mi?",
       "DeleteModifier": "Bu değiştirici ve ona giden bütün bağlantılar silinsin mi?",
       "CancelProject": "Bu araştırma projesi iptal edilsin mi? Denetim kaydı dünya verisinde kalır.",
+      "BennyReroll": "Bu araştırma skillini yeniden atmak için bir Benny harcansın mı? Yüksek olan sonuç korunur.",
       "ResetWeek": "Hafta sayacı 1. haftaya sıfırlansın mı? Aktif projelerin haftalık zarları ve işlenmiş hafta geçmişi temizlenir; proje ilerlemeleri korunur."
     },
     "Import": {
@@ -355,6 +361,7 @@
       "MoveCategoryTarget": "Geçerli bir hedef kategori seçin.",
       "NameRequired": "İsim zorunludur.",
       "NoActiveGM": "Bu değişiklik için aktif bir GM bağlı olmalıdır.",
+      "NoBennies": "Bu araştırmacının kullanabileceği Benny yok.",
       "Prerequisites": "Önce bütün zorunlu teknolojiler tamamlanmalıdır.",
       "ProjectAlreadyActive": "Bu teknoloji için zaten etkin bir proje var.",
       "ProjectCapacity": "Bu ülke veya tesis etkin proje sınırına ulaştı.",
@@ -365,6 +372,8 @@
       "ResultBands": "Sonuç aralıkları sıralı ve çakışmayan aralıklar olmalıdır.",
       "RollUnavailable": "Foundry Roll API kullanılamıyor.",
       "RollCancelled": "SWADE skill zarı iptal edildi.",
+      "RollRequiredBeforeBenny": "Benny kullanmadan önce bu araştırma skillinin ilk zarını atın.",
+      "BennySwadeOnly": "Benny yeniden atışları yalnızca SWADE skill zarlarında kullanılabilir.",
       "SkillMissing": "{actor} karakterinin kağıdında {skill} skilli yok.",
       "SwadeRequired": "SWADE skill zarları için SWADE oyun sistemi gerekir.",
       "SocketIdentity": "Socket gönderen kimliği istekle eşleşmedi.",

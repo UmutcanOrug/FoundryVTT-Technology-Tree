@@ -65,10 +65,12 @@
       "RestoreAll": "Replace all research data from a full backup",
       "FitView": "Fit all technologies in the view",
       "Fullscreen": "Toggle full-window view",
+      "GoToPrerequisite": "Go to {technology}",
       "Import": "Import a Research Tech Tree JSON backup",
       "Settings": "Research and roll settings",
       "ZoomIn": "Zoom in",
       "ZoomOut": "Zoom out",
+      "BennyReroll": "Spend a Benny and reroll; {count} available",
       "ChooseImage": "Choose an image with Foundry's file picker"
     },
     "Sidebar": {
@@ -204,6 +206,9 @@
       "OutcomeLine": "Result: {outcome}",
       "Raises": "Raises",
       "RaisesLine": "Raises: {raises}",
+      "BennyReroll": "Reroll with Benny",
+      "BennySummary": "Benny rerolls: {count} · Last: {last} · Best: {best}",
+      "BennyResultLine": "Benny reroll: {reroll} · Previous best: {previous} · Kept: {best}",
       "PointsLine": "Research points: +{points}"
     },
     "Modifier": {
@@ -272,6 +277,7 @@
       "DeleteTechnology": "Delete this technology and its associated project data?",
       "DeleteModifier": "Delete this modifier and remove all links to it?",
       "CancelProject": "Cancel this research project? Its audit record will remain in world data.",
+      "BennyReroll": "Spend one Benny to reroll this research skill? The higher result will be kept.",
       "ResetWeek": "Reset the counter to Week 1? Weekly rolls for active projects and processed-week history will be cleared; project progress is preserved."
     },
     "Import": {
@@ -355,6 +361,7 @@
       "MoveCategoryTarget": "Choose a valid destination category.",
       "NameRequired": "A name is required.",
       "NoActiveGM": "An active GM must be connected to make this change.",
+      "NoBennies": "No Benny is available for this researcher.",
       "Prerequisites": "All prerequisite technologies must be completed first.",
       "ProjectAlreadyActive": "This technology already has an active project.",
       "ProjectCapacity": "This country or facility has reached its active project limit.",
@@ -365,6 +372,8 @@
       "ResultBands": "Result bands must be ordered, non-overlapping ranges.",
       "RollUnavailable": "Foundry's Roll API is unavailable.",
       "RollCancelled": "The SWADE skill roll was cancelled.",
+      "RollRequiredBeforeBenny": "Roll this research skill once before using a Benny.",
+      "BennySwadeOnly": "Benny rerolls are available only for SWADE skill rolls.",
       "SkillMissing": "{actor} does not have the {skill} skill on their character sheet.",
       "SwadeRequired": "SWADE skill rolls require the SWADE game system.",
       "SocketIdentity": "The socket sender identity did not match the request.",

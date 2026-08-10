@@ -59,6 +59,7 @@ export const ACTIONS = Object.freeze({
   CANCEL_PROJECT: "cancelProject",
   ADJUST_PROGRESS: "adjustProgress",
   ROLL_ENGINEER: "rollEngineer",
+  REROLL_ENGINEER: "rerollEngineer",
   ADVANCE_WEEK: "advanceWeek",
   RESET_WEEK: "resetWeek",
   UPDATE_CONFIG: "updateModuleConfig"
@@ -77,7 +78,17 @@ export class ActionService {
   async handle(action, payload = {}, userId, meta = {}) {
     if (!ACTION_ALLOWLIST.has(action)) throw new Error(localize("Errors.UnsupportedAction", { action }));
     const user = requireKnownUser(userId);
-    if (action === ACTIONS.ROLL_ENGINEER) {
+    if (action === ACTIONS.ROLL_ENGINEER || action === ACTIONS.REROLL_ENGINEER) {
+      if (action === ACTIONS.REROLL_ENGINEER) {
+        return this.rollService.rerollEngineer({
+          projectId: asString(payload.projectId),
+          engineerSlot: Number(payload.engineerSlot),
+          actorUuid: asString(payload.actorUuid),
+          requesterUserId: user.id,
+          requestId: asString(meta.requestId || payload.requestId),
+          requestedWeek: Number(payload.currentWeek)
+        });
+      }
       return this.rollService.rollEngineer({
         projectId: asString(payload.projectId),
         engineerSlot: Number(payload.engineerSlot),

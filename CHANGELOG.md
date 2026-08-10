@@ -2,6 +2,23 @@
 
 Research Tech Tree follows [Semantic Versioning](https://semver.org/). Dates use the `YYYY-MM-DD` format.
 
+## [0.1.5] - 2026-08-10
+
+### Added
+
+- Clickable prerequisite chips that switch to the prerequisite's category and open that technology.
+- Benny rerolls for recorded SWADE research rolls, including remaining-Benny display and a spend confirmation.
+- Persistent Benny reroll count and latest reroll total in the project result.
+
+### Changed
+
+- Benny rerolls use SWADE's native reroll modifiers and keep the higher of the previous best and new total.
+- Module-managed SWADE chat rolls disable the system's independent reroll control so every Benny reroll remains synchronized with research progress.
+
+### Fixed
+
+- SWADE Trait Rolls with numeric modifiers and an unreported evaluation flag are now evaluated before their total is recorded.
+
 ## [0.1.4] - 2026-08-10
 
 ### Added

@@ -181,7 +181,11 @@ export function normalizeWeeklyRolls(raw) {
         skillName: asString(value.skillName),
         skillSwid: asString(value.skillSwid),
         success: asBoolean(value.success, asString(value.mode) === ROLL_MODES.SWADE_SKILL && asNumber(value.total, 0) >= 4),
-        raiseCount: asInteger(value.raiseCount, 0, { min: 0 })
+        raiseCount: asInteger(value.raiseCount, 0, { min: 0 }),
+        bennyRerolls: asInteger(value.bennyRerolls, 0, { min: 0 }),
+        lastRerollTotal: value.lastRerollTotal === null || value.lastRerollTotal === undefined
+          ? null : asNumber(value.lastRerollTotal, null),
+        lastRequestId: asString(value.lastRequestId)
       };
     }
   }

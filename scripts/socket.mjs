@@ -44,7 +44,7 @@ export class SocketController {
       userId: game.user.id,
       payload: { ...payload }
     };
-    if (action === ACTIONS.ROLL_ENGINEER) {
+    if (action === ACTIONS.ROLL_ENGINEER || action === ACTIONS.REROLL_ENGINEER) {
       Object.assign(packet, {
         projectId: asString(payload.projectId),
         engineerSlot: Number(payload.engineerSlot),
@@ -103,7 +103,9 @@ export class SocketController {
   }
 
   #verifiedPayload(packet) {
-    if (packet.action !== ACTIONS.ROLL_ENGINEER) return packet.payload && typeof packet.payload === "object" ? packet.payload : {};
+    if (packet.action !== ACTIONS.ROLL_ENGINEER && packet.action !== ACTIONS.REROLL_ENGINEER) {
+      return packet.payload && typeof packet.payload === "object" ? packet.payload : {};
+    }
     return {
       projectId: asString(packet.projectId),
       engineerSlot: Number(packet.engineerSlot),

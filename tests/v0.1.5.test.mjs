@@ -5,6 +5,7 @@ import { ACTIONS, ActionService } from "../scripts/services/action-service.mjs";
 import {
   ensureRollEvaluated,
   RollService,
+  selectBestSwadeResearchResult,
   swadeRaiseCount,
   swadeResearchAward
 } from "../scripts/services/roll-service.mjs";
@@ -78,6 +79,41 @@ test("unevaluated SWADE rolls with numeric skill modifiers are evaluated exactly
   assert.equal(evaluationCount, 1);
   await ensureRollEvaluated(evaluated);
   assert.equal(evaluationCount, 1);
+});
+
+test("SWADE rolls with hidden evaluation state and an empty dice pool are evaluated", async () => {
+  let evaluationCount = 0;
+  const die = { results: [] };
+  const roll = {
+    total: 0,
+    formula: "{1d8x,1d6x}kh + 1",
+    dice: [die],
+    async evaluate(options) {
+      evaluationCount += 1;
+      assert.equal(options.allowInteractive, false);
+      die.results.push({ result: 7, active: true });
+      this.total = 8;
+      return this;
+    }
+  };
+
+  assert.equal((await ensureRollEvaluated(roll)).total, 8);
+  assert.equal(evaluationCount, 1);
+  await ensureRollEvaluated(roll);
+  assert.equal(evaluationCount, 1);
+});
+
+test("Benny rerolls keep the higher SWADE research result", () => {
+  assert.deepEqual(selectBestSwadeResearchResult(8, 3, { rpOnSuccess: 2, rpPerRaise: 3 }), {
+    previousTotal: 8,
+    rerollTotal: 3,
+    keptReroll: false,
+    total: 8,
+    success: true,
+    raiseCount: 1,
+    points: 5
+  });
+  assert.equal(selectBestSwadeResearchResult(8, 12, { rpOnSuccess: 2, rpPerRaise: 3 }).total, 12);
 });
 
 test("custom skills with duplicate SWIDs resolve by their exact embedded name", () => {
@@ -170,6 +206,99 @@ test("SWADE rolls persist success, raises, and per-organization RP", async () =>
   assert.equal(envelope.researchState.projects[0].weeklyRolls[1][1].points, 8);
 });
 
+test("Benny rerolls spend Bennies and persist only the best result", async () => {
+  const gm = { id: "gm", isGM: true, bennies: 0 };
+  const skill = { id: "science", type: "skill", name: "Science", system: { swid: "science" } };
+  const rerollTotals = [3, 12];
+  const actor = {
+    id: "actor-1",
+    uuid: "Actor.actor-1",
+    name: "Ada",
+    documentName: "Actor",
+    items: [skill],
+    bennies: 2,
+    async spendBenny() {
+      if (this.bennies < 1) return false;
+      this.bennies -= 1;
+      return true;
+    },
+    async rollSkill(skillId, options) {
+      assert.equal(skillId, skill.id);
+      assert.equal(options.suppressChat, true);
+      assert.equal(options.isRerollable, false);
+      const total = rerollTotals.shift();
+      return {
+        _evaluated: false,
+        formula: "{1d8x,1d6x}kh + 1",
+        rerollMode: "",
+        applyReroll(appliedActor) { assert.equal(appliedActor, actor); },
+        setRerollable(value) { assert.equal(value, false); },
+        async evaluate() {
+          this._evaluated = true;
+          this.total = total;
+          return this;
+        },
+        async toMessage() {}
+      };
+    }
+  };
+  setGame({ actors: [actor], users: [gm] });
+  globalThis.foundry = {
+    utils: { fromUuid: async uuid => uuid === actor.uuid ? actor : null },
+    documents: { ChatMessage: { getSpeaker: () => ({ actor: actor.id, alias: actor.name }) } }
+  };
+  globalThis.ui = { notifications: { warn() {} } };
+
+  const envelope = {
+    catalog: {
+      entities: [{
+        id: "entity-1", public: true, allowedUserIds: [], researchSkill: "science",
+        researchSkillName: "Science", rpOnSuccess: 2, rpPerRaise: 3
+      }],
+      technologies: [{ id: "tech-1", entityId: "entity-1", visibility: "public", name: "Nano Tech" }]
+    },
+    researchState: {
+      currentWeek: 1,
+      processedRequestIds: [],
+      projects: [{
+        id: "project-1", entityId: "entity-1", technologyId: "tech-1", status: "active",
+        paused: false, engineers: [{ slot: 1, actorUuid: actor.uuid }, { slot: 2, actorUuid: null }],
+        weeklyRolls: { 1: { 1: {
+          total: 8, points: 5, actorUuid: actor.uuid, mode: "swadeSkill", skillName: "Science",
+          success: true, raiseCount: 1, bennyRerolls: 0, formula: "old"
+        } } }
+      }]
+    },
+    moduleConfig: { rollMode: "swadeSkill", resultMethod: "directTotal", resultBands: [] }
+  };
+  const store = {
+    snapshot: () => structuredClone(envelope),
+    transaction: async (_reason, mutator) => mutator(envelope)
+  };
+  const service = new RollService(store);
+  const baseRequest = {
+    projectId: "project-1",
+    engineerSlot: 1,
+    actorUuid: actor.uuid,
+    requesterUserId: gm.id,
+    requestedWeek: 1
+  };
+
+  const lower = await service.rerollEngineer({ ...baseRequest, requestId: "benny-1" });
+  assert.equal(lower.total, 8);
+  assert.equal(lower.lastRerollTotal, 3);
+  assert.equal(lower.bennyRerolls, 1);
+  assert.equal(actor.bennies, 1);
+
+  const higher = await service.rerollEngineer({ ...baseRequest, requestId: "benny-2" });
+  assert.equal(higher.total, 12);
+  assert.equal(higher.points, 8);
+  assert.equal(higher.raiseCount, 2);
+  assert.equal(higher.lastRerollTotal, 12);
+  assert.equal(higher.bennyRerolls, 2);
+  assert.equal(actor.bennies, 0);
+});
+
 test("week reset preserves progress and clears only active-cycle roll data", async () => {
   const gm = { id: "gm", isGM: true };
   setGame({ users: [gm] });
@@ -227,6 +356,8 @@ test("schema v3 migration derives success for existing SWADE roll records", () =
   });
   assert.equal(migrated.catalog.entities[0].rpOnSuccess, 1);
   assert.equal(migrated.researchState.projects[0].weeklyRolls[1][1].success, true);
+  assert.equal(migrated.researchState.projects[0].weeklyRolls[1][1].bennyRerolls, 0);
+  assert.equal(migrated.researchState.projects[0].weeklyRolls[1][1].lastRerollTotal, null);
 });
 
 test("v0.1.4 single-tree export contains only the selected tree and no live progress", () => {

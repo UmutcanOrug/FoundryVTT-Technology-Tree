@@ -69,11 +69,31 @@ export async function ensureRollEvaluated(roll) {
   const hasUsableTotal = roll.total !== undefined
     && roll.total !== null
     && Number.isFinite(Number(roll.total));
-  if (roll._evaluated === false || (!hasEvaluationState && !hasUsableTotal)) {
+  const hasUnevaluatedDice = rollDice(roll).some(die => {
+    if (die?._evaluated === false || die?.evaluated === false) return true;
+    return Array.isArray(die?.results) && die.results.length === 0;
+  });
+  if (roll._evaluated === false || hasUnevaluatedDice || (!hasEvaluationState && !hasUsableTotal)) {
     if (typeof roll.evaluate !== "function") throw new Error(localize("Errors.InvalidRollTotal"));
     return await roll.evaluate({ allowInteractive: false }) ?? roll;
   }
   return roll;
+}
+
+export function selectBestSwadeResearchResult(previousTotal, rerollTotal, entity = {}) {
+  const previous = Number(previousTotal);
+  const reroll = Number(rerollTotal);
+  if (!Number.isFinite(previous) || !Number.isFinite(reroll)) {
+    throw new Error(localize("Errors.InvalidRollTotal"));
+  }
+  const total = Math.max(previous, reroll);
+  return {
+    previousTotal: previous,
+    rerollTotal: reroll,
+    keptReroll: reroll > previous,
+    total,
+    ...swadeResearchAward(total, entity)
+  };
 }
 
 export class RollService {
@@ -140,7 +160,10 @@ export class RollService {
       skillName: evaluated.skillName ?? "",
       skillSwid: evaluated.skillSwid ?? "",
       success: evaluated.success ?? false,
-      raiseCount: evaluated.raiseCount ?? 0
+      raiseCount: evaluated.raiseCount ?? 0,
+      bennyRerolls: 0,
+      lastRerollTotal: null,
+      lastRequestId: ""
     };
 
     await this.store.transaction("rollEngineer", envelope => {
@@ -172,6 +195,111 @@ export class RollService {
       await this.#postRollMessage({ actor, entity, technology, project, week: researchState.currentWeek, record, roll: evaluated.roll });
     } catch (error) {
       reportError("rollChatMessage", error, { notify: false });
+      ui.notifications?.warn?.(localize("Warnings.RollSavedChatFailed"));
+    }
+    return record;
+  }
+
+  async rerollEngineer({
+    projectId,
+    engineerSlot,
+    actorUuid,
+    requesterUserId,
+    requestId,
+    requestedWeek
+  }) {
+    const snapshot = this.store.snapshot();
+    const { catalog, researchState } = snapshot;
+    const requester = requireKnownUser(requesterUserId);
+    const project = researchState.projects.find(item => item.id === projectId);
+    if (!project || project.status !== PROJECT_STATUS.ACTIVE || project.paused) {
+      throw new Error(localize("Errors.ProjectNotRollable"));
+    }
+    if (Number(requestedWeek) !== researchState.currentWeek) throw new Error(localize("Errors.WeekChanged"));
+    const entity = catalog.entities.find(item => item.id === project.entityId);
+    const technology = catalog.technologies.find(item => item.id === project.technologyId);
+    if (!entity || !technology) throw new Error(localize("Errors.ProjectReferences"));
+    const { actor, slot } = await validateEngineerRollPermission({
+      user: requester,
+      entity,
+      technology,
+      researchState,
+      project,
+      engineerSlot,
+      actorUuid
+    });
+    const previousRecord = project.weeklyRolls?.[researchState.currentWeek]?.[slot];
+    if (!previousRecord) throw new Error(localize("Errors.RollRequiredBeforeBenny"));
+    if (previousRecord.mode !== ROLL_MODES.SWADE_SKILL) throw new Error(localize("Errors.BennySwadeOnly"));
+    if (researchState.processedRequestIds.includes(requestId)) throw new Error(localize("Errors.DuplicateRequest"));
+
+    const spender = bennySpender(actor, requester);
+    if (!spender) throw new Error(localize("Errors.NoBennies"));
+    const evaluated = await this.#evaluateSwadeSkill({ actor, project, technology, entity, bennyReroll: true });
+    if (await spender.spendBenny() === false) throw new Error(localize("Errors.NoBennies"));
+
+    let record;
+    let rerollInfo;
+    try {
+      await this.store.transaction("rerollEngineer", envelope => {
+        const liveProject = envelope.researchState.projects.find(item => item.id === projectId);
+        const liveWeek = envelope.researchState.currentWeek;
+        if (!liveProject || liveProject.status !== PROJECT_STATUS.ACTIVE || liveProject.paused) {
+          throw new Error(localize("Errors.ProjectNotRollable"));
+        }
+        if (liveWeek !== researchState.currentWeek) throw new Error(localize("Errors.WeekChanged"));
+        const liveEntity = envelope.catalog.entities.find(item => item.id === liveProject.entityId);
+        const liveTechnology = envelope.catalog.technologies.find(item => item.id === liveProject.technologyId);
+        if (!canViewTechnology(requester, liveEntity, liveTechnology, envelope.researchState)) {
+          throw new Error(localize("Errors.TechnologyAccess"));
+        }
+        const liveAssignment = liveProject.engineers.find(item => item.slot === slot);
+        if (liveAssignment?.actorUuid !== actor.uuid) throw new Error(localize("Errors.EngineerAssignmentChanged"));
+        const liveRecord = liveProject.weeklyRolls?.[liveWeek]?.[slot];
+        if (!liveRecord) throw new Error(localize("Errors.RollRequiredBeforeBenny"));
+        if (liveRecord.mode !== ROLL_MODES.SWADE_SKILL) throw new Error(localize("Errors.BennySwadeOnly"));
+        if (envelope.researchState.processedRequestIds.includes(requestId)) throw new Error(localize("Errors.DuplicateRequest"));
+
+        const best = selectBestSwadeResearchResult(liveRecord.total, evaluated.total, liveEntity);
+        rerollInfo = best;
+        record = {
+          ...liveRecord,
+          total: best.total,
+          points: best.points,
+          success: best.success,
+          raiseCount: best.raiseCount,
+          formula: best.keptReroll ? evaluated.formula : liveRecord.formula,
+          timestamp: Date.now(),
+          bennyRerolls: Math.max(0, Math.trunc(Number(liveRecord.bennyRerolls) || 0)) + 1,
+          lastRerollTotal: best.rerollTotal,
+          lastRequestId: requestId
+        };
+        liveProject.weeklyRolls[liveWeek][slot] = record;
+        envelope.researchState.processedRequestIds.push(requestId);
+        envelope.researchState.processedRequestIds = envelope.researchState.processedRequestIds.slice(-LIMITS.MAX_PROCESSED_REQUEST_IDS);
+      });
+    } catch (error) {
+      try {
+        await spender.getBenny?.();
+      } catch (refundError) {
+        reportError("bennyRefund", refundError, { notify: false });
+      }
+      throw error;
+    }
+
+    try {
+      await this.#postRollMessage({
+        actor,
+        entity,
+        technology,
+        project,
+        week: researchState.currentWeek,
+        record,
+        roll: evaluated.roll,
+        rerollInfo
+      });
+    } catch (error) {
+      reportError("bennyRerollChatMessage", error, { notify: false });
       ui.notifications?.warn?.(localize("Warnings.RollSavedChatFailed"));
     }
     return record;
@@ -217,7 +345,7 @@ export class RollService {
     return { total, formula, roll };
   }
 
-  async #evaluateSwadeSkill({ actor, project, technology, entity }) {
+  async #evaluateSwadeSkill({ actor, project, technology, entity, bennyReroll = false }) {
     if (globalThis.game?.system?.id !== "swade" || typeof actor?.rollSkill !== "function") {
       throw new Error(localize("Errors.SwadeRequired"));
     }
@@ -227,12 +355,19 @@ export class RollService {
 
     const pendingRoll = await actor.rollSkill(skill.id, {
       suppressChat: true,
+      isRerollable: false,
       title: localize("Roll.SkillTitle", { skill: skill.name }),
       flavour: localize("Roll.ProjectLine", {
         project: localize("Roll.ProjectName", { technology: technology.name }),
         technology: technology.name
       })
     });
+    if (!pendingRoll) throw new Error(localize("Errors.RollCancelled"));
+    if (bennyReroll) {
+      if ("rerollMode" in pendingRoll) pendingRoll.rerollMode = "benny";
+      pendingRoll.applyReroll?.(actor);
+    }
+    pendingRoll.setRerollable?.(false);
     const roll = await ensureRollEvaluated(pendingRoll);
     const total = Number(roll.total);
     if (!Number.isFinite(total)) throw new Error(localize("Errors.InvalidRollTotal"));
@@ -250,13 +385,20 @@ export class RollService {
     };
   }
 
-  async #postRollMessage({ actor, entity, technology, project, week, record, roll }) {
+  async #postRollMessage({ actor, entity, technology, project, week, record, roll, rerollInfo = null }) {
     const rollTitle = record.skillName
       ? localize("Roll.SkillTitle", { skill: record.skillName })
       : localize("Roll.Engineering");
     const outcomeLine = record.mode === ROLL_MODES.SWADE_SKILL
       ? `${escapeHtml(localize("Roll.OutcomeLine", {
         outcome: localize(record.success ? "Roll.Success" : "Roll.Failure")
+      }))}<br>`
+      : "";
+    const rerollLine = rerollInfo
+      ? `${escapeHtml(localize("Roll.BennyResultLine", {
+        reroll: rerollInfo.rerollTotal,
+        previous: rerollInfo.previousTotal,
+        best: rerollInfo.total
       }))}<br>`
       : "";
     const flavor = `<div class="rtt-chat-roll">
@@ -268,6 +410,7 @@ export class RollService {
       }))}<br>
       ${escapeHtml(localize("Roll.WeekLine", { week }))}<br>
       ${outcomeLine}
+      ${rerollLine}
       ${escapeHtml(localize("Roll.RaisesLine", { raises: record.raiseCount }))}<br>
       ${escapeHtml(localize("Roll.PointsLine", { points: record.points }))}
     </div>`;
@@ -304,4 +447,21 @@ export function privateMessageData(entity, technology = null) {
 function actorAlreadyRolled(projects, week, actorUuid) {
   return projects.some(project => Object.values(project.weeklyRolls?.[week] ?? {})
     .some(record => record?.actorUuid === actorUuid));
+}
+
+function rollDice(roll) {
+  try {
+    const dice = roll?.dice;
+    if (Array.isArray(dice)) return dice;
+    if (dice && typeof dice[Symbol.iterator] === "function") return [...dice];
+  } catch (_error) {
+    // Some system Roll implementations do not expose dice until after evaluation.
+  }
+  return [];
+}
+
+function bennySpender(actor, requester) {
+  if (Number(actor?.bennies) > 0 && typeof actor?.spendBenny === "function") return actor;
+  if (requester?.isGM && Number(requester?.bennies) > 0 && typeof requester?.spendBenny === "function") return requester;
+  return null;
 }

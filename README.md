@@ -7,7 +7,7 @@ Research Tech Tree, Foundry Virtual Tabletop v13 dünyalarında ülkelerin, ara�
 - Foundry Virtual Tabletop: v13
 - Minimum sürüm: 13
 - Doğrulanan sürüm: 13.351
-- Modül sürümü: 0.1.2
+- Modül sürümü: 0.1.5
 - Oyun sistemi: SWADE (karakter skilli zar modu için)
 - Zorunlu modül bağımlılığı: yok
 
@@ -108,6 +108,8 @@ Sol listedeki kayıtlar düzenleme modunda yeniden sıralanabilir. Silme gibi ge
 
 Dairesel bağımlılıklar kaydedilmez. Kartlar düzenleme modunda sürüklenebilir; yeni koordinat drag bittiğinde world verisine yazılır ve diğer bağlı istemcilere yansır.
 
+Bir teknolojinin sağ panelde listelenen ön koşulları bağlantı olarak çalışır. Ön koşul adına tıklandığında modül gerekirse kategori sekmesini değiştirir ve ilgili teknolojiyi doğrudan açar.
+
 ## Araştırma projesi başlatma
 
 Bir teknoloji şu koşullarda başlatılabilir:
@@ -134,6 +136,8 @@ atabilir. Her proje, mühendis yuvası ve hafta için yalnızca bir sonuç kayde
 Varsayılan zar modu `swadeSkill`dır. Kuruluşta seçilen skill hem SWID hem görünen skill adıyla saklanır; zar anında atanmış baş araştırmacının kendi karakter kağıdındaki embedded Skill öğesi kesin ad, SWID ve geriye uyumlu slug eşleştirmesiyle bulunur. Ardından SWADE `Actor.rollSkill` akışı kullanılır ve dönen `TraitRoll`, toplam okunmadan önce değerlendirilir. Böylece Trait Die, Wild Die, ace ve skill üzerindeki `+1` gibi SWADE değiştiricileri uygulanır; özel isimli veya standart olmayan SWID kullanan custom skiller de desteklenir.
 
 SWADE sonucunda hedef sayı 4'tür ve hedef üzerindeki her tam 4 puan bir raise sayılır: 4–7 arası başarı ve 0 raise, 8–11 arası başarı ve 1 raise, 12–15 arası başarı ve 2 raise üretir. Kazanılan araştırma puanı `başarı AP'si + (raise sayısı × raise başına AP)` olarak hesaplanır. Başarı AP'si ve raise başına AP her ülke, araştırma tesisi veya kişisel araştırma için ayrı ayrı ayarlanabilir. Sonuç; araştırmacı, proje, teknoloji, hafta, başarı durumu, raise ve kazanılan puan bilgileriyle proje ekranına ve sohbet mesajına yazılır.
+
+İlk SWADE zarı kaydedildikten sonra araştırmacının Benny'si varsa proje kartında **Benny ile Yeniden At** düğmesi görünür. İşlem bir Benny harcar, SWADE'nin Benny yeniden atış modifierlarını uygular ve eski sonuçla yeni sonuçtan yüksek olanı araştırma kaydında tutar. Birden fazla Benny kullanılabilir; son yeniden atış ve korunan en iyi sonuç kartta gösterilir.
 
 Eski dünyalardaki dokunulmamış `1d20` varsayılanı otomatik taşınır; özellikle özelleştirilmiş Formula, Manual ve System Adapter seçenekleri korunur. `resultBands` yalnızca bu diğer zar modlarının sonuç dönüşümü için kullanılmaya devam eder.
 
@@ -225,7 +229,7 @@ npm run package
 Varsayılan çıktı:
 
 ```text
-research-tech-tree-v0.1.4.zip
+research-tech-tree-v0.1.5.zip
 ```
 
 Paket komutu gerekli manifest girişlerini kontrol eder, yalnızca runtime/dokümantasyon dosyalarını ZIP'e ekler ve SHA-256 özetini ekrana yazar.
