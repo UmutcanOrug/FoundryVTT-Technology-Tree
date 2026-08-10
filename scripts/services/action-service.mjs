@@ -409,6 +409,7 @@ export class ActionService {
       });
       assertTechnologyMembership(envelope, technology);
       envelope.catalog.technologies.push(technology);
+      refreshModifierUnlockStates(envelope, technology.onComplete.activateModifierIds);
     });
     return { technologyId: id };
   }
@@ -418,9 +419,12 @@ export class ActionService {
     await this.store.transaction("updateTechnology", envelope => {
       const index = envelope.catalog.technologies.findIndex(item => item.id === technologyId);
       if (index < 0) throw new Error(localize("Errors.TechnologyNotFound"));
+      const previousUnlockIds = envelope.catalog.technologies[index].onComplete.activateModifierIds;
       const technology = technologyFromPayload(payload, envelope.catalog.technologies[index]);
       assertTechnologyMembership(envelope, technology);
       envelope.catalog.technologies[index] = technology;
+      refreshModifierUnlockStates(envelope, technology.onComplete.activateModifierIds
+        .filter(modifierId => !previousUnlockIds.includes(modifierId)));
     });
     return { technologyId };
   }
@@ -479,6 +483,7 @@ export class ActionService {
       id = createStableId("modifier");
       const modifier = modifierFromPayload(payload, { id });
       assertModifierMembership(envelope, modifier);
+      syncModifierUnlock(envelope, modifier, asString(payload.unlockTechnologyId));
       envelope.catalog.modifiers.push(modifier);
       const entity = envelope.catalog.entities.find(item => item.id === modifier.entityId);
       if (!entity.modifierIds.includes(id)) entity.modifierIds.push(id);
@@ -494,6 +499,15 @@ export class ActionService {
       const existing = envelope.catalog.modifiers[index];
       const modifier = modifierFromPayload(payload, existing);
       assertModifierMembership(envelope, modifier);
+      const existingUnlockTechnologyId = envelope.catalog.technologies.find(technology =>
+        technology.onComplete.activateModifierIds.includes(modifierId))?.id ?? "";
+      syncModifierUnlock(
+        envelope,
+        modifier,
+        payload.unlockTechnologyId === undefined
+          ? existingUnlockTechnologyId
+          : asString(payload.unlockTechnologyId)
+      );
       envelope.catalog.modifiers[index] = modifier;
       if (existing.entityId !== modifier.entityId) {
         const oldEntity = envelope.catalog.entities.find(item => item.id === existing.entityId);
@@ -662,6 +676,35 @@ function assertModifierMembership(envelope, modifier) {
   if (modifier.scopeType === "technology" && !envelope.catalog.technologies.some(item => item.id === modifier.scopeId && item.entityId === entity.id)) throw new Error(localize("Errors.ModifierScope"));
   if (modifier.scopeType === "project" && !envelope.researchState.projects.some(item => item.id === modifier.scopeId && item.entityId === entity.id)) throw new Error(localize("Errors.ModifierScope"));
   if (modifier.scopeType !== "all" && !modifier.scopeId) throw new Error(localize("Errors.ModifierScope"));
+}
+
+function syncModifierUnlock(envelope, modifier, technologyId) {
+  for (const technology of envelope.catalog.technologies) {
+    technology.onComplete.activateModifierIds = technology.onComplete.activateModifierIds
+      .filter(modifierId => modifierId !== modifier.id);
+  }
+  if (!technologyId) return;
+  const technology = envelope.catalog.technologies.find(item => item.id === technologyId
+    && item.entityId === modifier.entityId);
+  if (!technology) throw new Error(localize("Errors.ModifierUnlockTechnology"));
+  technology.onComplete.activateModifierIds.push(modifier.id);
+  technology.onComplete.deactivateModifierIds = technology.onComplete.deactivateModifierIds
+    .filter(modifierId => modifierId !== modifier.id);
+  modifier.active = (envelope.researchState.completedTechnologyIdsByEntity[modifier.entityId] ?? [])
+    .includes(technology.id);
+}
+
+function refreshModifierUnlockStates(envelope, modifierIds) {
+  for (const modifierId of uniqueStrings(modifierIds)) {
+    const modifier = envelope.catalog.modifiers.find(item => item.id === modifierId);
+    if (!modifier) continue;
+    const unlockTechnologies = envelope.catalog.technologies.filter(technology =>
+      technology.entityId === modifier.entityId
+      && technology.onComplete.activateModifierIds.includes(modifierId));
+    if (!unlockTechnologies.length) continue;
+    const completed = new Set(envelope.researchState.completedTechnologyIdsByEntity[modifier.entityId] ?? []);
+    modifier.active = unlockTechnologies.some(technology => completed.has(technology.id));
+  }
 }
 
 function syncCategoryMembership(envelope, category) {

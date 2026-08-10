@@ -7,7 +7,7 @@ Research Tech Tree, Foundry Virtual Tabletop v13 dünyalarında ülkelerin, ara�
 - Foundry Virtual Tabletop: v13
 - Minimum sürüm: 13
 - Doğrulanan sürüm: 13.351
-- Modül sürümü: 0.1.6
+- Modül sürümü: 0.1.7
 - Oyun sistemi: SWADE (karakter skilli zar modu için)
 - Zorunlu modül bağımlılığı: yok
 
@@ -165,7 +165,7 @@ Geçmiş varsayılan olarak son 100 haftayla sınırlıdır; limit modül yapıl
 
 GM üst araç çubuğundaki **Haftayı Sıfırla** düğmesiyle sayacı yeniden 1. haftaya alabilir. Bu işlem aktif projelerin haftalık zarlarını ve işlenmiş hafta geçmişini temizler; mevcut proje ilerlemesini, tamamlanmış teknolojileri ve katalog verisini korur. İşlem uygulanmadan önce açıklayıcı bir onay gösterilir.
 
-## Buff ve debuff oluşturma
+## Bonus ve ceza oluşturma
 
 Modifier yönetiminde şu alanlar kullanılır:
 
@@ -174,9 +174,9 @@ Modifier yönetiminde şu alanlar kullanılır:
 - Scope: tüm araştırmalar, kategori, teknoloji, etiket veya proje
 - Süre: isteğe bağlı başlangıç ve bitiş haftası
 
-Çarpanlarda `1.20` yüzde 20 bonusu, `0.75` yüzde 25 cezayı ifade eder. Toplama modifierında pozitif değer bonus, negatif değer ceza üretir. Modifierlar Overview ekranında açıklama ve kaynaklarıyla bonus/ceza olarak gösterilir.
+Çarpanlarda `1.20` yüzde 20 bonusu, `0.75` yüzde 25 cezayı ifade eder. Toplama modifierında pozitif değer bonus, negatif değer ceza üretir. Overview ekranındaki **Bonuslar** ve **Cezalar** bölümleri aktif ve pasif bütün modifierları gösterir. Hesaplamaya katılan aktif kayıtlar bonus/ceza renginde, pasif kayıtlar gri görünür.
 
-Bir teknoloji tamamlandığında `onComplete` alanındaki modifierlar otomatik olarak etkinleştirilebilir veya devre dışı bırakılabilir.
+Modifier editöründeki **Açan teknoloji** alanıyla aynı araştırma kuruluşundaki herhangi bir teknoloji seçilebilir. Modifier, seçilen teknoloji tamamlanana kadar pasif kalır ve teknoloji tamamlandığında normal `onComplete` akışıyla otomatik etkinleşir. Teknoloji zaten tamamlanmışsa yeni bağlantı hemen etkinleşir. Aynı unlock ilişkisi teknoloji editöründeki **Tamamlanınca aç** seçeneklerinden de yönetilebilir.
 
 ## İzinler ve çok oyunculu kullanım
 
@@ -231,7 +231,7 @@ npm run package
 Varsayılan çıktı:
 
 ```text
-research-tech-tree-v0.1.6.zip
+research-tech-tree-v0.1.7.zip
 ```
 
 Paket komutu gerekli manifest girişlerini kontrol eder, yalnızca runtime/dokümantasyon dosyalarını ZIP'e ekler ve SHA-256 özetini ekrana yazar.
@@ -299,7 +299,7 @@ Testleri temiz bir Foundry v13.351 dünyasında, bir GM ve en az bir oyuncu iste
 - Negatif haftalık sonucun sıfıra sınırlandığını doğrulayın.
 - Teknolojiyi tamamlayın; completion haftasını, yeni açılan teknolojiyi, bildirimi ve sohbet mesajını kontrol edin.
 - Completion ödülünün ilgili modifierı etkinleştirdiğini/devre dışı bıraktığını doğrulayın.
-- Overview ekranında son hafta özetini ve buff/debuff açıklamalarını kontrol edin.
+- Overview ekranında son hafta özetini, bonus/ceza açıklamalarını ve aktif/pasif renklerini kontrol edin.
 
 ### Kalıcılık ve aktarım
 

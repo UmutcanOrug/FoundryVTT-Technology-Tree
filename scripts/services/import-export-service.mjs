@@ -183,6 +183,8 @@ export function mergeTreeIntoEnvelope(current, imported, { idFactory = createSta
   const categoryIdMap = new Map(sourceCategories.map(category => [category.id, nextId("category")]));
   const technologyIdMap = new Map(sourceTechnologies.map(technology => [technology.id, nextId("technology")]));
   const modifierIdMap = new Map(sourceModifiers.map(modifier => [modifier.id, nextId("modifier")]));
+  const technologyUnlockedModifierIds = new Set(sourceTechnologies
+    .flatMap(technology => technology.onComplete.activateModifierIds));
   const entityName = uniqueImportedName(result.catalog.entities, sourceEntity.name);
 
   result.catalog.entities.push({
@@ -220,7 +222,7 @@ export function mergeTreeIntoEnvelope(current, imported, { idFactory = createSta
       ...deepClone(modifier),
       id: modifierIdMap.get(modifier.id),
       entityId,
-      active: projectScoped ? false : modifier.active,
+      active: projectScoped || technologyUnlockedModifierIds.has(modifier.id) ? false : modifier.active,
       scopeType: projectScoped ? "all" : modifier.scopeType,
       scopeId: projectScoped ? "" : remapImportedScope(modifier, categoryIdMap, technologyIdMap)
     });

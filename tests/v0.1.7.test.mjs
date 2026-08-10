@@ -21,6 +21,7 @@ import {
 import { validateEnvelopeIntegrity } from "../scripts/store/integrity.mjs";
 import { migrateWorldEnvelope } from "../scripts/store/migrations.mjs";
 import { ProjectService } from "../scripts/services/project-service.mjs";
+import { modifierIsCurrentlyActive } from "../scripts/services/modifier-service.mjs";
 
 function userCollection(...users) {
   return {
@@ -401,6 +402,62 @@ test("GM-set progress creates a project and completes it at the effective RP cos
   validateEnvelopeIntegrity(envelope);
 });
 
+test("modifier activity includes manual, scheduled, and project-scoped passive states", () => {
+  assert.equal(modifierIsCurrentlyActive({ active: false, startWeek: null, endWeek: null, scopeType: "all" }, { week: 3 }), false);
+  assert.equal(modifierIsCurrentlyActive({ active: true, startWeek: 4, endWeek: null, scopeType: "all" }, { week: 3 }), false);
+  assert.equal(modifierIsCurrentlyActive({ active: true, startWeek: 2, endWeek: 4, scopeType: "all" }, { week: 3 }), true);
+  assert.equal(modifierIsCurrentlyActive({ active: true, startWeek: null, endWeek: null, scopeType: "project", scopeId: "project-1" }, {
+    week: 3,
+    projects: [{ id: "project-1", status: "cancelled" }]
+  }), false);
+});
+
+test("a modifier can remain passive until its selected unlock technology completes", async () => {
+  const gm = { id: "gm", isGM: true };
+  setGame({ users: [gm] });
+  const envelope = migrateWorldEnvelope({
+    schemaVersion: 5,
+    catalog: {
+      entities: [{ id: "entity-1", name: "Institute", categoryIds: ["category-1"], maxConcurrentProjects: 1 }],
+      categories: [{ id: "category-1", name: "Industry", entityIds: ["entity-1"] }],
+      technologies: [{
+        id: "tech-1", entityId: "entity-1", categoryId: "category-1", name: "Applied Methods", researchPointCost: 5
+      }]
+    },
+    researchState: {},
+    moduleConfig: {}
+  });
+  const store = { transaction: async (_reason, mutator) => mutator(envelope) };
+  const projectService = new ProjectService(store);
+  const actionService = new ActionService({ store, projectService, rollService: {}, weekService: { announceCompletions: async () => {} } });
+
+  const created = await actionService.handle(ACTIONS.CREATE_MODIFIER, {
+    entityId: "entity-1",
+    name: "Applied Research Bonus",
+    active: true,
+    operation: "add",
+    target: "weeklyTotal",
+    scopeType: "all",
+    value: 2,
+    unlockTechnologyId: "tech-1"
+  }, gm.id);
+  const modifier = envelope.catalog.modifiers.find(item => item.id === created.modifierId);
+  assert.equal(modifier.active, false);
+  assert.deepEqual(envelope.catalog.technologies[0].onComplete.activateModifierIds, [modifier.id]);
+
+  await projectService.setTechnologyProgress("entity-1", "tech-1", 5);
+  assert.equal(modifier.active, true);
+  validateEnvelopeIntegrity(envelope);
+});
+
+test("overview renders active and passive bonuses and penalties", () => {
+  const template = readFileSync(new URL("../templates/research-app.hbs", import.meta.url), "utf8");
+  assert.match(template, /overview\.bonuses/u);
+  assert.match(template, /overview\.penalties/u);
+  assert.match(template, /is-inactive/u);
+  assert.match(template, /name="unlockTechnologyId"/u);
+});
+
 test("prerequisite navigation marks the destination for a seven-second highlight", () => {
   const template = readFileSync(new URL("../templates/research-app.hbs", import.meta.url), "utf8");
   const application = readFileSync(new URL("../scripts/app/research-app.mjs", import.meta.url), "utf8");
@@ -497,7 +554,8 @@ test("single-tree import preserves existing trees and remaps every relationship"
         { id: "tech-one", entityId: "entity-source", categoryId: "category-one", name: "Foundation" },
         {
           id: "tech-two", entityId: "entity-source", categoryId: "category-two", name: "Advanced Tech",
-          prerequisiteIds: ["tech-one"], activatedModifierIds: ["modifier-source"]
+          prerequisiteIds: ["tech-one"], activatedModifierIds: ["modifier-source"],
+          onComplete: { activateModifierIds: ["modifier-source"] }
         }
       ],
       modifiers: [{
@@ -525,6 +583,8 @@ test("single-tree import preserves existing trees and remaps every relationship"
   assert.notEqual(newEntity.id, "entity-source");
   assert.deepEqual(advanced.prerequisiteIds, [foundation.id]);
   assert.deepEqual(advanced.activatedModifierIds, [bonus.id]);
+  assert.deepEqual(advanced.onComplete.activateModifierIds, [bonus.id]);
+  assert.equal(bonus.active, false);
   assert.equal(bonus.scopeId, advanced.id);
   assert.ok(newEntity.categoryIds.every(id => id.startsWith("category-imported-")));
   validateEnvelopeIntegrity(merged.envelope);

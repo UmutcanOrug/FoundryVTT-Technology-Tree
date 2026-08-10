@@ -32,6 +32,16 @@ export function activeModifiersFor(catalog, context) {
   return (catalog?.modifiers ?? []).filter(modifier => isModifierActive(modifier, context));
 }
 
+export function modifierIsCurrentlyActive(modifier, { week, projects = [] } = {}) {
+  if (!modifier?.active) return false;
+  if (modifier.startWeek !== null && week < modifier.startWeek) return false;
+  if (modifier.endWeek !== null && week > modifier.endWeek) return false;
+  if (modifier.scopeType === MODIFIER_SCOPES.PROJECT) {
+    return projects.some(project => project.id === modifier.scopeId && project.status === "active");
+  }
+  return true;
+}
+
 function modifierPair(modifiers, target) {
   let add = 0;
   let multiply = 1;

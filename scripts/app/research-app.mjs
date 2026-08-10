@@ -175,6 +175,7 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
           type: target.dataset.editorType,
           id: target.dataset.editorId || "",
           entityType: target.dataset.entityType,
+          modifierKind: target.dataset.modifierKind,
           projectId: target.dataset.projectId,
           engineerSlot: target.dataset.engineerSlot,
           actorUuid: target.dataset.actorUuid

@@ -2,6 +2,20 @@
 
 Research Tech Tree follows [Semantic Versioning](https://semver.org/). Dates use the `YYYY-MM-DD` format.
 
+## [0.1.7] - 2026-08-10
+
+### Added
+
+- Separate add controls for bonuses and penalties, with sensible positive or negative defaults.
+- An "Unlocked by technology" selector in the modifier editor that can link a bonus or penalty to any technology in the same research organization.
+- Active and passive state labels for every modifier shown on the overview.
+
+### Changed
+
+- The Active Bonuses and Active Penalties panels are now named Bonuses and Penalties and display every modifier.
+- Passive, scheduled, expired, and inactive project-scoped modifiers are shown in gray; modifiers currently affecting research retain their bonus or penalty colors.
+- Technology completion unlocks linked modifiers through the existing completion workflow, while already completed unlock technologies activate newly linked modifiers immediately.
+
 ## [0.1.6] - 2026-08-10
 
 ### Added

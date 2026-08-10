@@ -690,6 +690,14 @@
   border-color: var(--rtt-red);
 }
 
+.rtt-modifier.is-inactive {
+  color: #9299a2;
+  border-color: #626973;
+  background: #181b20;
+  filter: grayscale(1);
+  opacity: 0.68;
+}
+
 .rtt-modifier strong {
   display: flex;
   justify-content: space-between;
@@ -700,6 +708,23 @@
 .rtt-modifier em {
   color: var(--rtt-gold);
   font-style: normal;
+}
+
+.rtt-modifier.is-inactive em,
+.rtt-modifier.is-inactive p,
+.rtt-modifier.is-inactive .rtt-modifier-state {
+  color: #858c95;
+}
+
+.rtt-modifier-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  color: #9fc7ad;
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .rtt-modifier p {

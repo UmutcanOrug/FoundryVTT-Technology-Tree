@@ -21,7 +21,7 @@ import {
   activeModifiersFor,
   calculateWeeklyResearch,
   effectiveResearchCost,
-  isModifierActive,
+  modifierIsCurrentlyActive,
   modifierIsBuff,
   modifierMagnitudeText
 } from "../services/modifier-service.mjs";
@@ -377,12 +377,11 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
 
 function buildOverviewContext(entity, catalog, state, user) {
   const week = state.currentWeek;
-  const modifiers = catalog.modifiers.filter(modifier => modifier.entityId === entity.id
-    && modifier.active
-    && (modifier.scopeType !== MODIFIER_SCOPES.PROJECT
-      || state.projects.some(project => project.id === modifier.scopeId && project.status === PROJECT_STATUS.ACTIVE))
-    && (modifier.startWeek === null || week >= modifier.startWeek)
-    && (modifier.endWeek === null || week <= modifier.endWeek));
+  const modifiers = catalog.modifiers.filter(modifier => modifier.entityId === entity.id);
+  const activeModifiers = modifiers.filter(modifier => modifierIsCurrentlyActive(modifier, {
+    week,
+    projects: state.projects
+  }));
   const projects = state.projects.filter(project => {
     if (project.entityId !== entity.id || project.status !== PROJECT_STATUS.ACTIVE) return false;
     const technology = catalog.technologies.find(item => item.id === project.technologyId);
@@ -395,8 +394,8 @@ function buildOverviewContext(entity, catalog, state, user) {
     }));
   const completedCount = (state.completedTechnologyIdsByEntity[entity.id] ?? []).length;
   const categoryById = new Map(catalog.categories.map(category => [category.id, category]));
-  const strengthIds = new Set(modifiers.filter(modifier => modifier.scopeType === MODIFIER_SCOPES.CATEGORY && modifierIsBuff(modifier)).map(modifier => modifier.scopeId));
-  const weaknessIds = new Set(modifiers.filter(modifier => modifier.scopeType === MODIFIER_SCOPES.CATEGORY && !modifierIsBuff(modifier)).map(modifier => modifier.scopeId));
+  const strengthIds = new Set(activeModifiers.filter(modifier => modifier.scopeType === MODIFIER_SCOPES.CATEGORY && modifierIsBuff(modifier)).map(modifier => modifier.scopeId));
+  const weaknessIds = new Set(activeModifiers.filter(modifier => modifier.scopeType === MODIFIER_SCOPES.CATEGORY && !modifierIsBuff(modifier)).map(modifier => modifier.scopeId));
   const history = [...state.history].reverse().map(entry => {
     const entitySummary = entry.entities?.find(item => item.entityId === entity.id);
     if (!entitySummary) return null;
@@ -408,9 +407,15 @@ function buildOverviewContext(entity, catalog, state, user) {
     };
   }).filter(Boolean).slice(0, 8);
   return {
-    modifiers: modifiers.map(modifierContext),
-    buffs: modifiers.filter(modifierIsBuff).map(modifierContext),
-    debuffs: modifiers.filter(modifier => !modifierIsBuff(modifier)).map(modifierContext),
+    modifiers: modifiers.map(modifier => modifierContext(modifier, {
+      currentlyActive: activeModifiers.includes(modifier)
+    })),
+    bonuses: modifiers.filter(modifierIsBuff).map(modifier => modifierContext(modifier, {
+      currentlyActive: activeModifiers.includes(modifier)
+    })),
+    penalties: modifiers.filter(modifier => !modifierIsBuff(modifier)).map(modifier => modifierContext(modifier, {
+      currentlyActive: activeModifiers.includes(modifier)
+    })),
     projects,
     completedCount,
     capacityText: `${projects.length} / ${entity.maxConcurrentProjects}`,
@@ -493,7 +498,6 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
         .map(item => ({ ...item, checked: technology.prerequisiteIds.includes(item.id) })),
       modifiers: catalog.modifiers.filter(item => item.entityId === entityId).map(item => ({
         ...item,
-        activatedChecked: technology.activatedModifierIds.includes(item.id),
         activateChecked: technology.onComplete.activateModifierIds.includes(item.id),
         deactivateChecked: technology.onComplete.deactivateModifierIds.includes(item.id)
       })),
@@ -505,8 +509,11 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
   if (type === "modifier") {
     const modifier = catalog.modifiers.find(item => item.id === editorState.id) ?? {
       id: "", entityId: selectedEntity?.id ?? "", name: "", description: "", active: true, source: "",
-      operation: "add", target: "weeklyTotal", scopeType: "all", scopeId: "", value: 0, startWeek: null, endWeek: null
+      operation: "add", target: "weeklyTotal", scopeType: "all", scopeId: "",
+      value: editorState.modifierKind === "penalty" ? -1 : 1, startWeek: null, endWeek: null
     };
+    const unlockTechnology = catalog.technologies.find(technology => technology.entityId === modifier.entityId
+      && technology.onComplete.activateModifierIds.includes(modifier.id)) ?? null;
     const choices = [
       ...catalog.categories.filter(item => item.entityIds.includes(modifier.entityId)).map(item => ({ id: item.id, name: `${localize("Common.Category")}: ${item.name}` })),
       ...catalog.technologies.filter(item => item.entityId === modifier.entityId).map(item => ({ id: item.id, name: `${localize("Common.Technology")}: ${item.name}` })),
@@ -517,6 +524,8 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
       title: localize(modifier.id ? "Editor.Modifier.EditTitle" : "Editor.Modifier.CreateTitle"),
       action: modifier.id ? "updateModifier" : "createModifier",
       modifier,
+      unlockTechnologies: catalog.technologies.filter(technology => technology.entityId === modifier.entityId)
+        .map(technology => ({ ...technology, selected: technology.id === unlockTechnology?.id })),
       scopeChoices: choices
     };
   }
@@ -554,7 +563,7 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
   return null;
 }
 
-function modifierContext(modifier) {
+function modifierContext(modifier, { currentlyActive = Boolean(modifier.active) } = {}) {
   const description = modifier.description || localize("Modifier.GeneratedDescription", {
     amount: modifierMagnitudeText(modifier),
     target: localize(`Modifier.Target.${modifier.target}`),
@@ -565,7 +574,9 @@ function modifierContext(modifier) {
     description,
     magnitude: modifierMagnitudeText(modifier),
     buff: modifierIsBuff(modifier),
-    kindLabel: modifierIsBuff(modifier) ? localize("Modifier.Buff") : localize("Modifier.Debuff")
+    kindLabel: modifierIsBuff(modifier) ? localize("Modifier.Buff") : localize("Modifier.Debuff"),
+    currentlyActive,
+    activityLabel: localize(currentlyActive ? "Modifier.ActiveStatus" : "Modifier.PassiveStatus")
   };
 }
 
