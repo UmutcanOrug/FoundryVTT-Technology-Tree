@@ -59,6 +59,10 @@
       "ResetWeek": "Hafta sayacını 1. haftaya sıfırla",
       "EditMode": "GM düzenleme kontrollerini etkinleştir",
       "Export": "Bütün araştırma verilerini JSON olarak dışa aktar",
+      "ExportTree": "Seçili teknoloji ağacını dışa aktar",
+      "ImportTree": "Mevcut ağaçları silmeden tek bir teknoloji ağacı ekle",
+      "ExportAll": "Bütün araştırma verilerinin tam yedeğini dışa aktar",
+      "RestoreAll": "Tam yedekten bütün araştırma verilerini geri yükle",
       "FitView": "Bütün teknolojileri görünüme sığdır",
       "Fullscreen": "Tam pencere görünümünü aç veya kapat",
       "Import": "Araştırma Teknoloji Ağacı JSON yedeğini içe aktar",
@@ -272,8 +276,12 @@
     },
     "Import": {
       "InvalidJson": "Geçersiz JSON",
-      "ConfirmTitle": "Araştırma Verisini İçe Aktar",
-      "ConfirmBody": "Mevcut veri {entities} kuruluş, {technologies} teknoloji ve {projects} projeyle değiştirilsin mi?",
+      "TreeConfirmTitle": "Teknoloji Ağacı Ekle",
+      "TreeConfirmBody": "“{name}” ağacı {categories} kategori ve {technologies} teknolojiyle eklensin mi? Mevcut ağaçlar korunur. Dosyadaki projeler, ilerleme ve tamamlanma durumu kopyalanmaz.",
+      "AddTree": "Ağacı Ekle",
+      "NameSuffix": "İçe Aktarıldı",
+      "ConfirmTitle": "Tam Araştırma Yedeğini Geri Yükle",
+      "ConfirmBody": "Mevcut bütün veriler {entities} kuruluş, {technologies} teknoloji ve {projects} projeyle değiştirilsin mi?",
       "BackupCreated": "Önce mevcut verinin yedeği indirildi."
     },
     "Summary": {
@@ -289,6 +297,8 @@
     "Notifications": {
       "Saved": "Araştırma verisi kaydedildi.",
       "ExportComplete": "{filename} dışa aktarıldı.",
+      "TreeExportComplete": "{entityName}, {filename} dosyasına dışa aktarıldı.",
+      "TreeImportComplete": "{name}, mevcut teknoloji ağaçları silinmeden eklendi.",
       "ImportComplete": "Araştırma verisi başarıyla içe aktarıldı.",
       "TechnologyCompleted": "{name} tamamlandı."
     },
@@ -325,6 +335,7 @@
       "ImportNumber": "İçe aktarma sonlu olmayan bir sayı içeriyor.",
       "ImportRecord": "İçe aktarma geçersiz bir kayıt içeriyor.",
       "ImportShape": "Seçilen JSON'un üst düzey yapısı geçersiz.",
+      "ImportSingleTree": "Bu işlem tam olarak bir teknoloji ağacı kabul eder. Her ağacı ayrı dışa ve içe aktarın veya tam yedek geri yüklemeyi kullanın.",
       "ImportState": "İçe aktarma geçerli araştırma durumu içermiyor.",
       "ImportTooLarge": "İçe aktarma dosyaları en fazla 20 MB olabilir.",
       "ImportWorldChanged": "İçe aktarma onayı açıkken araştırma verileri değişti. Hiçbir şey içe aktarılmadı; yeni veriyi inceleyip yeniden deneyin.",

@@ -12,6 +12,11 @@ import {
   resolveResearchSkill,
   worldResearchSkillChoices
 } from "../scripts/services/swade-skill-service.mjs";
+import {
+  buildTreeExportEnvelope,
+  mergeTreeIntoEnvelope
+} from "../scripts/services/import-export-service.mjs";
+import { validateEnvelopeIntegrity } from "../scripts/store/integrity.mjs";
 import { migrateWorldEnvelope } from "../scripts/store/migrations.mjs";
 
 function userCollection(...users) {
@@ -222,4 +227,110 @@ test("schema v3 migration derives success for existing SWADE roll records", () =
   });
   assert.equal(migrated.catalog.entities[0].rpOnSuccess, 1);
   assert.equal(migrated.researchState.projects[0].weeklyRolls[1][1].success, true);
+});
+
+test("v0.1.4 single-tree export contains only the selected tree and no live progress", () => {
+  setGame({ users: [{ id: "gm", isGM: true }] });
+  const world = migrateWorldEnvelope({
+    schemaVersion: 4,
+    catalog: {
+      entities: [
+        { id: "entity-a", name: "Alpha", categoryIds: ["category-shared"], modifierIds: ["modifier-project"] },
+        { id: "entity-b", name: "Beta", categoryIds: ["category-shared"] }
+      ],
+      categories: [{ id: "category-shared", name: "Industry", entityIds: ["entity-a", "entity-b"] }],
+      technologies: [
+        { id: "tech-a", entityId: "entity-a", categoryId: "category-shared", name: "Alpha Tech" },
+        { id: "tech-b", entityId: "entity-b", categoryId: "category-shared", name: "Beta Tech" }
+      ],
+      modifiers: [{
+        id: "modifier-project", entityId: "entity-a", name: "Project Bonus",
+        scopeType: "project", scopeId: "project-a"
+      }]
+    },
+    researchState: {
+      currentWeek: 7,
+      projects: [{ id: "project-a", entityId: "entity-a", technologyId: "tech-a", progress: 4 }]
+    },
+    moduleConfig: {}
+  });
+
+  const exported = buildTreeExportEnvelope(world, "entity-a", { moduleVersion: "0.1.4" });
+  assert.equal(exported.exportType, "technologyTree");
+  assert.deepEqual(exported.catalog.entities.map(item => item.id), ["entity-a"]);
+  assert.deepEqual(exported.catalog.technologies.map(item => item.id), ["tech-a"]);
+  assert.deepEqual(exported.catalog.categories[0].entityIds, ["entity-a"]);
+  assert.equal(exported.catalog.modifiers[0].scopeType, "all");
+  assert.equal(exported.catalog.modifiers[0].active, false);
+  assert.deepEqual(exported.researchState.projects, []);
+  assert.equal(exported.researchState.currentWeek, 1);
+  validateEnvelopeIntegrity(migrateWorldEnvelope(exported));
+});
+
+test("single-tree import preserves existing trees and remaps every relationship", () => {
+  setGame({ users: [{ id: "gm", isGM: true }] });
+  const current = migrateWorldEnvelope({
+    schemaVersion: 4,
+    catalog: {
+      entities: [{ id: "entity-current", name: "Existing", categoryIds: ["category-current"] }],
+      categories: [{ id: "category-current", name: "Existing Category", entityIds: ["entity-current"] }],
+      technologies: [{ id: "tech-current", entityId: "entity-current", categoryId: "category-current", name: "Existing Tech" }],
+      modifiers: []
+    },
+    researchState: { currentWeek: 9 },
+    moduleConfig: {}
+  });
+  const imported = migrateWorldEnvelope({
+    schemaVersion: 4,
+    catalog: {
+      entities: [{
+        id: "entity-source", name: "Imported Tree", categoryIds: ["category-one", "category-two"],
+        modifierIds: ["modifier-source"]
+      }],
+      categories: [
+        { id: "category-one", name: "Foundations", entityIds: ["entity-source"] },
+        { id: "category-two", name: "Advanced", entityIds: ["entity-source"] }
+      ],
+      technologies: [
+        { id: "tech-one", entityId: "entity-source", categoryId: "category-one", name: "Foundation" },
+        {
+          id: "tech-two", entityId: "entity-source", categoryId: "category-two", name: "Advanced Tech",
+          prerequisiteIds: ["tech-one"], activatedModifierIds: ["modifier-source"]
+        }
+      ],
+      modifiers: [{
+        id: "modifier-source", entityId: "entity-source", name: "Advanced Bonus",
+        scopeType: "technology", scopeId: "tech-two"
+      }]
+    },
+    researchState: {},
+    moduleConfig: {}
+  });
+  let sequence = 0;
+  const merged = mergeTreeIntoEnvelope(current, imported, {
+    idFactory: prefix => `${prefix}-imported-${++sequence}`
+  });
+
+  assert.deepEqual(merged.envelope.catalog.entities[0], current.catalog.entities[0]);
+  assert.deepEqual(merged.envelope.catalog.categories[0], current.catalog.categories[0]);
+  assert.deepEqual(merged.envelope.catalog.technologies[0], current.catalog.technologies[0]);
+  assert.deepEqual(merged.envelope.researchState, current.researchState);
+  const newEntity = merged.envelope.catalog.entities.find(item => item.id === merged.entityId);
+  const foundation = merged.envelope.catalog.technologies.find(item => item.name === "Foundation");
+  const advanced = merged.envelope.catalog.technologies.find(item => item.name === "Advanced Tech");
+  const bonus = merged.envelope.catalog.modifiers.find(item => item.name === "Advanced Bonus");
+  assert.ok(newEntity);
+  assert.notEqual(newEntity.id, "entity-source");
+  assert.deepEqual(advanced.prerequisiteIds, [foundation.id]);
+  assert.deepEqual(advanced.activatedModifierIds, [bonus.id]);
+  assert.equal(bonus.scopeId, advanced.id);
+  assert.ok(newEntity.categoryIds.every(id => id.startsWith("category-imported-")));
+  validateEnvelopeIntegrity(merged.envelope);
+});
+
+test("tree import rejects files containing more than one entity", () => {
+  setGame();
+  assert.throws(() => mergeTreeIntoEnvelope({ catalog: {}, researchState: {} }, {
+    catalog: { entities: [{ id: "one" }, { id: "two" }] }
+  }));
 });

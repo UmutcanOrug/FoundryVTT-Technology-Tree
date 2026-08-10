@@ -2,6 +2,23 @@
 
 Research Tech Tree follows [Semantic Versioning](https://semver.org/). Dates use the `YYYY-MM-DD` format.
 
+## [0.1.4] - 2026-08-10
+
+### Added
+
+- Export of the currently selected country, research facility, or personal research as a standalone technology-tree JSON file.
+- Additive single-tree import that preserves every technology tree already present in the world.
+- Separate full-backup export and destructive full-backup restore controls.
+
+### Changed
+
+- Imported tree IDs are always regenerated and every category, prerequisite, modifier, reward, and scope reference is remapped safely.
+- Single-tree transfers intentionally start without projects, progress, roll history, or completion state.
+
+### Fixed
+
+- Importing a technology tree no longer replaces the entire research catalog.
+
 ## [0.1.3] - 2026-08-02
 
 ### Added

@@ -198,9 +198,17 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
         }
         break;
       }
-      case "export":
+      case "export-tree":
         try {
-          const filename = this.importExportService.exportAll();
+          const exported = this.importExportService.exportTree(this.uiState.selectedEntityId);
+          ui.notifications?.info?.(localize("Notifications.TreeExportComplete", exported));
+        } catch (error) {
+          this.#notifyError(error);
+        }
+        break;
+      case "export-all":
+        try {
+          const filename = this.importExportService.exportAll({ backup: true });
           ui.notifications?.info?.(localize("Notifications.ExportComplete", { filename }));
         } catch (error) {
           this.#notifyError(error);
@@ -208,6 +216,9 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
         break;
       case "import-trigger":
         this.element.querySelector("[data-import-input]")?.click();
+        break;
+      case "restore-trigger":
+        this.element.querySelector("[data-restore-input]")?.click();
         break;
       case "file-picker":
         this.#openFilePicker(target);
@@ -268,17 +279,26 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
       if (hidden) hidden.value = selected?.dataset.skillName || selected?.textContent?.trim() || "";
       return;
     }
-    if (!event.target.matches("[data-import-input]")) return;
+    const isTreeImport = event.target.matches("[data-import-input]");
+    const isFullRestore = event.target.matches("[data-restore-input]");
+    if (!isTreeImport && !isFullRestore) return;
     const input = event.target;
     const file = input.files?.[0];
     input.value = "";
     if (!file) return;
     try {
       const text = await this.importExportService.readFile(file);
-      const imported = await this.importExportService.importText(text);
+      const imported = isTreeImport
+        ? await this.importExportService.importTreeText(text)
+        : await this.importExportService.replaceAllText(text);
       if (imported) {
         this.uiState.editor = null;
         this.uiState.selectedTechnologyId = "";
+        if (isTreeImport && imported.entityId) {
+          this.uiState.selectedEntityId = imported.entityId;
+          this.uiState.activeTabByEntity[imported.entityId] = "overview";
+          await this.#persistClientState();
+        }
         this.render({ force: true });
       }
     } catch (error) {

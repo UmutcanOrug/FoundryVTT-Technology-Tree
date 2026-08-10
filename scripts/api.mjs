@@ -58,6 +58,7 @@ export function createResearchApi({ store, socketController, importExportService
     registerSystemAdapter,
     registeredSystemAdapters,
     exportData: () => importExportService.exportAll(),
+    exportTree: entityId => importExportService.exportTree(entityId),
     refresh
   });
 }

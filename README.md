@@ -188,23 +188,25 @@ World setting değişiklikleri bağlı istemcilere Foundry tarafından iletilir.
 
 ## Import ve export
 
-GM, üst araç çubuğundaki **Export** ile schema version, module version, export tarihi, katalog, araştırma durumu ve yapılandırmayı tek JSON dosyasında indirebilir.
+GM, üst araç çubuğunda seçili ülke, araştırma tesisi veya kişisel araştırmayı **Seçili Teknoloji Ağacını Dışa Aktar** düğmesiyle tek başına indirebilir. Bu taşınabilir ağaç dosyası kuruluşu, kategorilerini, teknolojilerini, ön koşullarını ve modifier bağlantılarını içerir; devam eden projeleri, ilerlemeyi, zar geçmişini veya tamamlanma durumunu içermez.
 
-Import sırasında:
+**Teknoloji Ağacı Ekle** ile içe aktarma sırasında:
 
 1. Dosya okunur ve JSON yapısı doğrulanır.
-2. Eksik alanlar güvenli varsayılanlarla tamamlanır; bilinmeyen alanlar kullanılmaz.
-3. ID ve referans bütünlüğü, proje bağlantıları ve teknoloji grafiği doğrulanır.
+2. Dosyanın tam olarak bir kuruluş ağacı içerdiği doğrulanır.
+3. Entity, kategori, teknoloji ve modifier ID'leri yeniden üretilir; ön koşullar, ödüller ve scope bağlantıları yeni ID'lere taşınır.
 4. Mevcut world verisinin otomatik yedeği indirilir.
-5. GM onayı alındıktan sonra doğrulanmış veri uygulanır.
+5. GM onayı alındıktan sonra ağaç mevcut katalog silinmeden eklenir.
 
-Parse veya doğrulama hatasında mevcut world verisi değiştirilmez. Başarılı import sonrasında açık pencereler yeni veriyi gösterir.
+Parse, doğrulama veya ID/reference hatasında mevcut world verisi değiştirilmez. Aynı ağaç tekrar içe aktarılırsa bağımsız yeni ID'lerle ikinci bir kopya oluşturulur; aynı isim varsa ayırt edici “İçe Aktarıldı” eki kullanılır. Başarılı import sonrasında eklenen ağaç seçilir ve açık pencereler yeni veriyi gösterir.
+
+Araç çubuğundaki **Tam Yedeği Dışa Aktar** bütün katalog, proje durumu, geçmiş ve yapılandırmayı saklar. **Tam Yedeği Geri Yükle** ise açıkça ayrı ve yıkıcı bir işlemdir; mevcut dünya verisini seçilen tam yedekle değiştirir. Böylece günlük tek-ağaç aktarımı ile tam dünya kurtarma akışı birbirine karışmaz.
 
 ## Veri saklama ve yedekleme
 
 Katalog, araştırma durumu, module config ve schema version world-scoped Foundry settings içinde saklanır. Son seçili entity, aktif sekmeler ve pan/zoom görünümü client-scoped ayarda tutulur.
 
-Önemli dünya değişikliklerinden ve özellikle modül güncellemesinden önce Foundry dünya yedeği alınması önerilir. JSON export ayrıca taşınabilir bir modül-verisi yedeğidir.
+Önemli dünya değişikliklerinden ve özellikle modül güncellemesinden önce Foundry dünya yedeği alınması önerilir. Tam JSON yedeği bütün modül verisini saklar; tek-ağaç export dosyası ise yeni veya mevcut bir dünyaya eklenebilen taşınabilir bir teknoloji ağacıdır.
 
 ## Geliştirme
 
@@ -223,7 +225,7 @@ npm run package
 Varsayılan çıktı:
 
 ```text
-dist/research-tech-tree-v0.1.2.zip
+research-tech-tree-v0.1.4.zip
 ```
 
 Paket komutu gerekli manifest girişlerini kontrol eder, yalnızca runtime/dokümantasyon dosyalarını ZIP'e ekler ve SHA-256 özetini ekrana yazar.
@@ -296,7 +298,8 @@ Testleri temiz bir Foundry v13.351 dünyasında, bir GM ve en az bir oyuncu iste
 ### Kalıcılık ve aktarım
 
 - Sayfayı yenileyin ve bütün katalog/proje verisinin korunduğunu doğrulayın.
-- JSON export alın ve aynı dosyayı yeniden import edin.
+- Seçili ağacı dışa aktarın; başka ağaçların bulunduğu dünyaya içe aktarıp mevcut ağaçların korunarak yeni ağacın eklendiğini doğrulayın.
+- Tam yedek dışa aktarıp ayrı **Tam Yedeği Geri Yükle** akışıyla geri yükleyin.
 - Bozuk JSON ve geçersiz referanslı import deneyin; mevcut verinin değişmediğini kontrol edin.
 - Geçmiş limitini düşürüp eski kayıtların sınırlandığını doğrulayın.
 - Foundry dilini İngilizce ve Türkçe yaparak görünen metinleri kontrol edin.

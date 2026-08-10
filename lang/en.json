@@ -59,6 +59,10 @@
       "ResetWeek": "Reset the week counter to Week 1",
       "EditMode": "Enable GM editing controls",
       "Export": "Export all research data as JSON",
+      "ExportTree": "Export the selected technology tree",
+      "ImportTree": "Add one technology tree without removing existing trees",
+      "ExportAll": "Export a full backup of all research data",
+      "RestoreAll": "Replace all research data from a full backup",
       "FitView": "Fit all technologies in the view",
       "Fullscreen": "Toggle full-window view",
       "Import": "Import a Research Tech Tree JSON backup",
@@ -272,8 +276,12 @@
     },
     "Import": {
       "InvalidJson": "Invalid JSON",
-      "ConfirmTitle": "Import Research Data",
-      "ConfirmBody": "Replace current data with {entities} entities, {technologies} technologies, and {projects} projects?",
+      "TreeConfirmTitle": "Add Technology Tree",
+      "TreeConfirmBody": "Add “{name}” with {categories} categories and {technologies} technologies? Existing trees will be preserved. Projects, progress, and completion state from the file will not be copied.",
+      "AddTree": "Add Tree",
+      "NameSuffix": "Imported",
+      "ConfirmTitle": "Restore Full Research Backup",
+      "ConfirmBody": "Replace all current data with {entities} entities, {technologies} technologies, and {projects} projects?",
       "BackupCreated": "A backup of the current data has been downloaded first."
     },
     "Summary": {
@@ -289,6 +297,8 @@
     "Notifications": {
       "Saved": "Research data saved.",
       "ExportComplete": "Exported {filename}.",
+      "TreeExportComplete": "Exported {entityName} to {filename}.",
+      "TreeImportComplete": "Added {name} without removing existing technology trees.",
       "ImportComplete": "Research data imported successfully.",
       "TechnologyCompleted": "{name} has been completed."
     },
@@ -325,6 +335,7 @@
       "ImportNumber": "The import contains a non-finite number.",
       "ImportRecord": "The import contains an invalid record.",
       "ImportShape": "The selected JSON has an invalid top-level structure.",
+      "ImportSingleTree": "This action accepts exactly one technology tree. Export and import each tree separately, or use full backup restore.",
       "ImportState": "The import does not contain valid research state.",
       "ImportTooLarge": "Import files are limited to 20 MB.",
       "ImportWorldChanged": "Research data changed while the import confirmation was open. Nothing was imported; review the new data and try again.",

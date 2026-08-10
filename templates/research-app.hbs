@@ -36,8 +36,10 @@
       <button type="button" data-rtt-ui="fullscreen" title="{{localize 'RTT.Tooltips.Fullscreen'}}"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
       {{#if isGM}}
         <button type="button" data-rtt-ui="open-editor" data-editor-type="config" title="{{localize 'RTT.Tooltips.Settings'}}"><i class="fa-solid fa-sliders"></i></button>
-        <button type="button" data-rtt-ui="export" title="{{localize 'RTT.Tooltips.Export'}}"><i class="fa-solid fa-file-export"></i></button>
-        <button type="button" data-rtt-ui="import-trigger" {{#unless canImport}}disabled{{/unless}} title="{{#if canImport}}{{localize 'RTT.Tooltips.Import'}}{{else}}{{localize 'RTT.Errors.ActiveGMOnly'}}{{/if}}"><i class="fa-solid fa-file-import"></i></button>
+        <button type="button" data-rtt-ui="export-tree" {{#unless selectedEntity}}disabled{{/unless}} title="{{localize 'RTT.Tooltips.ExportTree'}}"><i class="fa-solid fa-file-export"></i></button>
+        <button type="button" data-rtt-ui="import-trigger" {{#unless canImport}}disabled{{/unless}} title="{{#if canImport}}{{localize 'RTT.Tooltips.ImportTree'}}{{else}}{{localize 'RTT.Errors.ActiveGMOnly'}}{{/if}}"><i class="fa-solid fa-file-circle-plus"></i></button>
+        <button type="button" data-rtt-ui="export-all" title="{{localize 'RTT.Tooltips.ExportAll'}}"><i class="fa-solid fa-box-archive"></i></button>
+        <button type="button" data-rtt-ui="restore-trigger" {{#unless canImport}}disabled{{/unless}} title="{{#if canImport}}{{localize 'RTT.Tooltips.RestoreAll'}}{{else}}{{localize 'RTT.Errors.ActiveGMOnly'}}{{/if}}"><i class="fa-solid fa-clock-rotate-left"></i></button>
       {{/if}}
     </div>
   </header>
@@ -317,7 +319,7 @@
     </aside>
   </div>
 
-  {{#if isGM}}<input type="file" accept="application/json,.json" data-import-input hidden>{{/if}}
+  {{#if isGM}}<input type="file" accept="application/json,.json" data-import-input hidden><input type="file" accept="application/json,.json" data-restore-input hidden>{{/if}}
 
   {{#if editor}}
     <div class="rtt-modal-backdrop" data-editor-modal>
