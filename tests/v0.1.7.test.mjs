@@ -16,6 +16,7 @@ import {
 } from "../scripts/services/swade-skill-service.mjs";
 import {
   buildTreeExportEnvelope,
+  ImportExportService,
   mergeTreeIntoEnvelope
 } from "../scripts/services/import-export-service.mjs";
 import { validateEnvelopeIntegrity } from "../scripts/store/integrity.mjs";
@@ -488,10 +489,10 @@ test("schema v3 migration derives success for existing SWADE roll records", () =
   assert.equal(migrated.researchState.projects[0].weeklyRolls[1][1].lastRerollTotal, null);
 });
 
-test("v0.1.4 single-tree export contains only the selected tree and no live progress", () => {
+test("v0.1.8 single-tree export preserves the selected tree's complete live state", () => {
   setGame({ users: [{ id: "gm", isGM: true }] });
   const world = migrateWorldEnvelope({
-    schemaVersion: 4,
+    schemaVersion: 5,
     catalog: {
       entities: [
         { id: "entity-a", name: "Alpha", categoryIds: ["category-shared"], modifierIds: ["modifier-project"] },
@@ -499,48 +500,96 @@ test("v0.1.4 single-tree export contains only the selected tree and no live prog
       ],
       categories: [{ id: "category-shared", name: "Industry", entityIds: ["entity-a", "entity-b"] }],
       technologies: [
-        { id: "tech-a", entityId: "entity-a", categoryId: "category-shared", name: "Alpha Tech" },
+        {
+          id: "tech-a-base", entityId: "entity-a", categoryId: "category-shared",
+          name: "Alpha Foundation", researchPointCost: 5
+        },
+        {
+          id: "tech-a-active", entityId: "entity-a", categoryId: "category-shared",
+          name: "Alpha Active", prerequisiteIds: ["tech-a-base"], researchPointCost: 10
+        },
         { id: "tech-b", entityId: "entity-b", categoryId: "category-shared", name: "Beta Tech" }
       ],
       modifiers: [{
         id: "modifier-project", entityId: "entity-a", name: "Project Bonus",
-        scopeType: "project", scopeId: "project-a"
+        active: true, scopeType: "project", scopeId: "project-active", startWeek: 7, endWeek: 10
       }]
     },
     researchState: {
       currentWeek: 7,
-      projects: [{ id: "project-a", entityId: "entity-a", technologyId: "tech-a", progress: 4 }]
+      projects: [
+        {
+          id: "project-complete", entityId: "entity-a", technologyId: "tech-a-base",
+          status: "completed", progress: 5, startedWeek: 3, completedWeek: 6
+        },
+        {
+          id: "project-active", entityId: "entity-a", technologyId: "tech-a-active",
+          status: "active", progress: 4, startedWeek: 7,
+          engineers: [{ slot: 1, actorUuid: "Actor.alpha" }],
+          weeklyRolls: { 7: { 1: {
+            total: 9, points: 3, actorUuid: "Actor.alpha", requestId: "request-a",
+            lastRequestId: "benny-a", mode: "swadeSkill", success: true, raiseCount: 1
+          } } }
+        }
+      ],
+      completedTechnologyIdsByEntity: { "entity-a": ["tech-a-base"] },
+      history: [{
+        id: "history-6", week: 6, processedAt: "2026-08-11T00:00:00.000Z",
+        entities: [
+          {
+            entityId: "entity-a",
+            projectResults: [{
+              projectId: "project-complete", technologyId: "tech-a-base",
+              appliedModifierIds: ["modifier-project"], progressAfter: 5, completed: true
+            }],
+            completedTechnologyIds: ["tech-a-base"]
+          },
+          { entityId: "entity-b", projectResults: [], completedTechnologyIds: [] }
+        ]
+      }],
+      processedRequestIds: ["unrelated-request", "request-a", "benny-a"]
     },
     moduleConfig: {}
   });
 
-  const exported = buildTreeExportEnvelope(world, "entity-a", { moduleVersion: "0.1.4" });
+  const exported = buildTreeExportEnvelope(world, "entity-a", { moduleVersion: "0.1.8" });
   assert.equal(exported.exportType, "technologyTree");
   assert.deepEqual(exported.catalog.entities.map(item => item.id), ["entity-a"]);
-  assert.deepEqual(exported.catalog.technologies.map(item => item.id), ["tech-a"]);
+  assert.deepEqual(exported.catalog.technologies.map(item => item.id), ["tech-a-base", "tech-a-active"]);
   assert.deepEqual(exported.catalog.categories[0].entityIds, ["entity-a"]);
-  assert.equal(exported.catalog.modifiers[0].scopeType, "all");
-  assert.equal(exported.catalog.modifiers[0].active, false);
-  assert.deepEqual(exported.researchState.projects, []);
-  assert.equal(exported.researchState.currentWeek, 1);
+  assert.equal(exported.catalog.modifiers[0].scopeType, "project");
+  assert.equal(exported.catalog.modifiers[0].scopeId, "project-active");
+  assert.equal(exported.catalog.modifiers[0].active, true);
+  assert.equal(exported.researchState.currentWeek, 7);
+  assert.deepEqual(exported.researchState.projects, world.researchState.projects.filter(project => project.entityId === "entity-a"));
+  assert.deepEqual(exported.researchState.completedTechnologyIdsByEntity, { "entity-a": ["tech-a-base"] });
+  assert.deepEqual(exported.researchState.processedRequestIds, ["request-a", "benny-a"]);
+  assert.deepEqual(exported.researchState.history[0].entities.map(summary => summary.entityId), ["entity-a"]);
   validateEnvelopeIntegrity(migrateWorldEnvelope(exported));
 });
 
-test("single-tree import preserves existing trees and remaps every relationship", () => {
+test("single-tree import preserves and remaps progress, completion, rolls, history, and project modifiers", () => {
   setGame({ users: [{ id: "gm", isGM: true }] });
   const current = migrateWorldEnvelope({
-    schemaVersion: 4,
+    schemaVersion: 5,
     catalog: {
       entities: [{ id: "entity-current", name: "Existing", categoryIds: ["category-current"] }],
       categories: [{ id: "category-current", name: "Existing Category", entityIds: ["entity-current"] }],
       technologies: [{ id: "tech-current", entityId: "entity-current", categoryId: "category-current", name: "Existing Tech" }],
       modifiers: []
     },
-    researchState: { currentWeek: 9 },
+    researchState: {
+      currentWeek: 9,
+      history: [{
+        id: "history-current", week: 8,
+        entities: [{ entityId: "entity-current", projectResults: [], completedTechnologyIds: [] }]
+      }],
+      processedRequestIds: ["current-request"]
+    },
     moduleConfig: {}
   });
   const imported = migrateWorldEnvelope({
-    schemaVersion: 4,
+    schemaVersion: 5,
     catalog: {
       entities: [{
         id: "entity-source", name: "Imported Tree", categoryIds: ["category-one", "category-two"],
@@ -551,7 +600,10 @@ test("single-tree import preserves existing trees and remaps every relationship"
         { id: "category-two", name: "Advanced", entityIds: ["entity-source"] }
       ],
       technologies: [
-        { id: "tech-one", entityId: "entity-source", categoryId: "category-one", name: "Foundation" },
+        {
+          id: "tech-one", entityId: "entity-source", categoryId: "category-one",
+          name: "Foundation", researchPointCost: 10
+        },
         {
           id: "tech-two", entityId: "entity-source", categoryId: "category-two", name: "Advanced Tech",
           prerequisiteIds: ["tech-one"], activatedModifierIds: ["modifier-source"],
@@ -560,10 +612,40 @@ test("single-tree import preserves existing trees and remaps every relationship"
       ],
       modifiers: [{
         id: "modifier-source", entityId: "entity-source", name: "Advanced Bonus",
-        scopeType: "technology", scopeId: "tech-two"
+        active: true, scopeType: "project", scopeId: "project-two", startWeek: 7, endWeek: 10
       }]
     },
-    researchState: {},
+    researchState: {
+      currentWeek: 7,
+      projects: [
+        {
+          id: "project-one", entityId: "entity-source", technologyId: "tech-one",
+          status: "completed", progress: 10, startedWeek: 2, completedWeek: 6
+        },
+        {
+          id: "project-two", entityId: "entity-source", technologyId: "tech-two",
+          status: "active", progress: 4, startedWeek: 7,
+          engineers: [{ slot: 1, actorUuid: "Actor.imported" }],
+          weeklyRolls: { 7: { 1: {
+            total: 8, points: 3, actorUuid: "Actor.imported", requestId: "roll-request",
+            mode: "swadeSkill", success: true, raiseCount: 1
+          } } }
+        }
+      ],
+      completedTechnologyIdsByEntity: { "entity-source": ["tech-one"] },
+      history: [{
+        id: "history-source", week: 6,
+        entities: [{
+          entityId: "entity-source",
+          projectResults: [{
+            projectId: "project-one", technologyId: "tech-one",
+            appliedModifierIds: ["modifier-source"], progressAfter: 10, completed: true
+          }],
+          completedTechnologyIds: ["tech-one"]
+        }]
+      }],
+      processedRequestIds: ["roll-request"]
+    },
     moduleConfig: {}
   });
   let sequence = 0;
@@ -574,19 +656,103 @@ test("single-tree import preserves existing trees and remaps every relationship"
   assert.deepEqual(merged.envelope.catalog.entities[0], current.catalog.entities[0]);
   assert.deepEqual(merged.envelope.catalog.categories[0], current.catalog.categories[0]);
   assert.deepEqual(merged.envelope.catalog.technologies[0], current.catalog.technologies[0]);
-  assert.deepEqual(merged.envelope.researchState, current.researchState);
+  assert.equal(merged.envelope.researchState.currentWeek, 9);
   const newEntity = merged.envelope.catalog.entities.find(item => item.id === merged.entityId);
   const foundation = merged.envelope.catalog.technologies.find(item => item.name === "Foundation");
   const advanced = merged.envelope.catalog.technologies.find(item => item.name === "Advanced Tech");
   const bonus = merged.envelope.catalog.modifiers.find(item => item.name === "Advanced Bonus");
+  const completedProject = merged.envelope.researchState.projects.find(project => project.technologyId === foundation.id);
+  const activeProject = merged.envelope.researchState.projects.find(project => project.technologyId === advanced.id);
   assert.ok(newEntity);
   assert.notEqual(newEntity.id, "entity-source");
   assert.deepEqual(advanced.prerequisiteIds, [foundation.id]);
   assert.deepEqual(advanced.activatedModifierIds, [bonus.id]);
   assert.deepEqual(advanced.onComplete.activateModifierIds, [bonus.id]);
-  assert.equal(bonus.active, false);
-  assert.equal(bonus.scopeId, advanced.id);
+  assert.equal(bonus.active, true);
+  assert.equal(bonus.scopeId, activeProject.id);
+  assert.equal(bonus.startWeek, 9);
+  assert.equal(bonus.endWeek, 12);
+  assert.equal(completedProject.progress, 10);
+  assert.equal(completedProject.completedWeek, 8);
+  assert.equal(activeProject.progress, 4);
+  assert.equal(activeProject.startedWeek, 9);
+  assert.equal(activeProject.weeklyRolls[9][1].total, 8);
+  assert.deepEqual(merged.envelope.researchState.completedTechnologyIdsByEntity[newEntity.id], [foundation.id]);
+  assert.deepEqual(merged.envelope.researchState.processedRequestIds, ["current-request", "roll-request"]);
+  const mergedHistory = merged.envelope.researchState.history.find(entry => entry.week === 8);
+  const importedSummary = mergedHistory.entities.find(summary => summary.entityId === newEntity.id);
+  assert.equal(mergedHistory.entities.length, 2);
+  assert.equal(importedSummary.projectResults[0].projectId, completedProject.id);
+  assert.equal(importedSummary.projectResults[0].technologyId, foundation.id);
+  assert.deepEqual(importedSummary.projectResults[0].appliedModifierIds, [bonus.id]);
+  assert.deepEqual(importedSummary.completedTechnologyIds, [foundation.id]);
   assert.ok(newEntity.categoryIds.every(id => id.startsWith("category-imported-")));
+  validateEnvelopeIntegrity(merged.envelope);
+});
+
+test("full backup export and validation preserve the entire normalized world state", () => {
+  setGame({ users: [{ id: "gm", isGM: true }] });
+  const world = migrateWorldEnvelope({
+    schemaVersion: 5,
+    catalog: {
+      entities: [{ id: "entity-1", name: "Exact State", categoryIds: ["category-1"] }],
+      categories: [{ id: "category-1", name: "Science", entityIds: ["entity-1"] }],
+      technologies: [{ id: "tech-1", entityId: "entity-1", categoryId: "category-1", researchPointCost: 20 }],
+      modifiers: []
+    },
+    researchState: {
+      currentWeek: 4,
+      projects: [{ id: "project-1", entityId: "entity-1", technologyId: "tech-1", progress: 11, startedWeek: 2 }],
+      history: [{ id: "history-3", week: 3, entities: [] }],
+      processedRequestIds: ["request-1"]
+    },
+    moduleConfig: {}
+  });
+  const service = new ImportExportService({ snapshot: () => structuredClone(world) });
+  const exported = service.createExportEnvelope(world);
+  const restored = service.validateImportText(JSON.stringify(exported));
+
+  assert.equal(exported.exportType, "fullBackup");
+  assert.deepEqual(exported.catalog, world.catalog);
+  assert.deepEqual(exported.researchState, world.researchState);
+  assert.deepEqual(exported.moduleConfig, world.moduleConfig);
+  assert.deepEqual(restored, world);
+});
+
+test("importing a newer tree snapshot advances the world week without backdating its state", () => {
+  setGame({ users: [{ id: "gm", isGM: true }] });
+  const current = migrateWorldEnvelope({
+    schemaVersion: 5,
+    catalog: { entities: [], categories: [], technologies: [], modifiers: [] },
+    researchState: { currentWeek: 2 },
+    moduleConfig: {}
+  });
+  const imported = migrateWorldEnvelope({
+    schemaVersion: 5,
+    catalog: {
+      entities: [{ id: "entity-source", categoryIds: ["category-source"] }],
+      categories: [{ id: "category-source", entityIds: ["entity-source"] }],
+      technologies: [{ id: "tech-source", entityId: "entity-source", categoryId: "category-source" }],
+      modifiers: []
+    },
+    researchState: {
+      currentWeek: 6,
+      projects: [{
+        id: "project-source", entityId: "entity-source", technologyId: "tech-source",
+        startedWeek: 5, weeklyRolls: { 6: {} }
+      }]
+    },
+    moduleConfig: {}
+  });
+  let sequence = 0;
+  const merged = mergeTreeIntoEnvelope(current, imported, {
+    idFactory: prefix => `${prefix}-newer-${++sequence}`
+  });
+  const project = merged.envelope.researchState.projects[0];
+
+  assert.equal(merged.envelope.researchState.currentWeek, 6);
+  assert.equal(project.startedWeek, 5);
+  assert.ok(project.weeklyRolls[6]);
   validateEnvelopeIntegrity(merged.envelope);
 });
 

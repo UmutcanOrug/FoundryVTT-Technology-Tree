@@ -295,7 +295,7 @@
     "Import": {
       "InvalidJson": "Geçersiz JSON",
       "TreeConfirmTitle": "Teknoloji Ağacı Ekle",
-      "TreeConfirmBody": "“{name}” ağacı {categories} kategori ve {technologies} teknolojiyle eklensin mi? Mevcut ağaçlar korunur. Dosyadaki projeler, ilerleme ve tamamlanma durumu kopyalanmaz.",
+      "TreeConfirmBody": "“{name}” ağacı {categories} kategori, {technologies} teknoloji ve {projects} projeyle eklensin mi? Mevcut ağaçlar korunur. İlerleme, tamamlanma durumu, araştırmacı atamaları, zarlar ve geçmiş geri yüklenir. İçe aktarılan zaman çizelgesi dünyanın canlı haftasıyla hizalanır; daha yeni bir dosya dünya haftasını ileri alabilir.",
       "AddTree": "Ağacı Ekle",
       "NameSuffix": "İçe Aktarıldı",
       "ConfirmTitle": "Tam Araştırma Yedeğini Geri Yükle",

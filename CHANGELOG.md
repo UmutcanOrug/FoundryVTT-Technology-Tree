@@ -2,6 +2,19 @@
 
 Research Tech Tree follows [Semantic Versioning](https://semver.org/). Dates use the `YYYY-MM-DD` format.
 
+## [0.1.8] - 2026-08-11
+
+### Changed
+
+- Standalone technology-tree exports now include the selected organization's complete live state: projects, RP progress, completion records, researcher assignments, weekly rolls, bounded history, and active modifier state.
+- Additive single-tree imports safely regenerate and remap entity, technology, modifier, project, completion, and history relationships while preserving every existing tree.
+- Imported week-based state is aligned with the live world week; importing a snapshot from a newer week advances the world week instead of discarding or backdating its state.
+
+### Fixed
+
+- Exporting and re-importing a single technology tree no longer resets its researched RP or completed technologies.
+- Project-scoped modifiers no longer lose their active state or project relationship during a standalone tree transfer.
+
 ## [0.1.7] - 2026-08-10
 
 ### Added

@@ -295,7 +295,7 @@
     "Import": {
       "InvalidJson": "Invalid JSON",
       "TreeConfirmTitle": "Add Technology Tree",
-      "TreeConfirmBody": "Add “{name}” with {categories} categories and {technologies} technologies? Existing trees will be preserved. Projects, progress, and completion state from the file will not be copied.",
+      "TreeConfirmBody": "Add “{name}” with {categories} categories, {technologies} technologies, and {projects} projects? Existing trees will be preserved. Progress, completions, researcher assignments, rolls, and history will be restored. The imported timeline is aligned with the world's live week; a newer file can advance the world week.",
       "AddTree": "Add Tree",
       "NameSuffix": "Imported",
       "ConfirmTitle": "Restore Full Research Backup",

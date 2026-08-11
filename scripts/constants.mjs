@@ -1,6 +1,6 @@
 export const MODULE_ID = "research-tech-tree";
 export const MODULE_TITLE = "Research Tech Tree";
-export const MODULE_VERSION = "0.1.7";
+export const MODULE_VERSION = "0.1.8";
 export const SCHEMA_VERSION = 5;
 export const SOCKET_CHANNEL = `module.${MODULE_ID}`;
 

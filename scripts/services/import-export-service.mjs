@@ -121,6 +121,11 @@ export function buildTreeExportEnvelope(snapshot, entityId, { moduleVersion = MO
   if (categories.length !== categoryIds.size) throw new Error(localize("Errors.ProjectReferences"));
   const technologies = (snapshot.catalog.technologies ?? []).filter(technology => technology.entityId === entity.id);
   const modifiers = (snapshot.catalog.modifiers ?? []).filter(modifier => modifier.entityId === entity.id);
+  const projects = (snapshot.researchState?.projects ?? []).filter(project => project.entityId === entity.id);
+  const completedTechnologyIds = (snapshot.researchState?.completedTechnologyIdsByEntity?.[entity.id] ?? [])
+    .filter(technologyId => technologies.some(technology => technology.id === technologyId));
+  const history = treeHistoryForEntity(snapshot.researchState?.history, entity.id);
+  const requestIds = requestIdsForProjects(projects);
   return {
     format: MODULE_ID,
     exportType: "technologyTree",
@@ -135,16 +140,15 @@ export function buildTreeExportEnvelope(snapshot, entityId, { moduleVersion = MO
       }],
       categories: categories.map(category => ({ ...deepClone(category), entityIds: [entity.id] })),
       technologies: deepClone(technologies),
-      modifiers: modifiers.map(modifier => modifier.scopeType === "project"
-        ? { ...deepClone(modifier), active: false, scopeType: "all", scopeId: "" }
-        : deepClone(modifier))
+      modifiers: deepClone(modifiers)
     },
     researchState: {
-      currentWeek: 1,
-      projects: [],
-      completedTechnologyIdsByEntity: {},
-      history: [],
-      processedRequestIds: []
+      currentWeek: snapshot.researchState?.currentWeek ?? 1,
+      projects: deepClone(projects),
+      completedTechnologyIdsByEntity: { [entity.id]: deepClone(completedTechnologyIds) },
+      history,
+      processedRequestIds: (snapshot.researchState?.processedRequestIds ?? [])
+        .filter(requestId => requestIds.has(requestId))
     },
     moduleConfig: deepClone(snapshot.moduleConfig)
   };
@@ -159,6 +163,7 @@ export function mergeTreeIntoEnvelope(current, imported, { idFactory = createSta
     .filter(Boolean);
   const sourceTechnologies = imported.catalog.technologies.filter(technology => technology.entityId === sourceEntity.id);
   const sourceModifiers = imported.catalog.modifiers.filter(modifier => modifier.entityId === sourceEntity.id);
+  const sourceProjects = imported.researchState.projects.filter(project => project.entityId === sourceEntity.id);
   if (sourceCategories.length !== sourceEntity.categoryIds.length) throw new Error(localize("Errors.ImportCatalog"));
 
   const occupiedIds = new Set([
@@ -166,7 +171,8 @@ export function mergeTreeIntoEnvelope(current, imported, { idFactory = createSta
     ...result.catalog.categories,
     ...result.catalog.technologies,
     ...result.catalog.modifiers,
-    ...result.researchState.projects
+    ...result.researchState.projects,
+    ...result.researchState.history
   ].map(item => item.id));
   const nextId = prefix => {
     for (let attempt = 0; attempt < 100; attempt += 1) {
@@ -183,9 +189,12 @@ export function mergeTreeIntoEnvelope(current, imported, { idFactory = createSta
   const categoryIdMap = new Map(sourceCategories.map(category => [category.id, nextId("category")]));
   const technologyIdMap = new Map(sourceTechnologies.map(technology => [technology.id, nextId("technology")]));
   const modifierIdMap = new Map(sourceModifiers.map(modifier => [modifier.id, nextId("modifier")]));
-  const technologyUnlockedModifierIds = new Set(sourceTechnologies
-    .flatMap(technology => technology.onComplete.activateModifierIds));
+  const projectIdMap = new Map(sourceProjects.map(project => [project.id, nextId("project")]));
   const entityName = uniqueImportedName(result.catalog.entities, sourceEntity.name);
+  const importedWeek = imported.researchState.currentWeek;
+  const targetWeek = Math.max(result.researchState.currentWeek, importedWeek);
+  const weekOffset = targetWeek - importedWeek;
+  result.researchState.currentWeek = targetWeek;
 
   result.catalog.entities.push({
     ...deepClone(sourceEntity),
@@ -217,16 +226,44 @@ export function mergeTreeIntoEnvelope(current, imported, { idFactory = createSta
     });
   }
   for (const modifier of sourceModifiers) {
-    const projectScoped = modifier.scopeType === "project";
     result.catalog.modifiers.push({
       ...deepClone(modifier),
       id: modifierIdMap.get(modifier.id),
       entityId,
-      active: projectScoped || technologyUnlockedModifierIds.has(modifier.id) ? false : modifier.active,
-      scopeType: projectScoped ? "all" : modifier.scopeType,
-      scopeId: projectScoped ? "" : remapImportedScope(modifier, categoryIdMap, technologyIdMap)
+      scopeId: remapImportedScope(modifier, categoryIdMap, technologyIdMap, projectIdMap),
+      startWeek: shiftOptionalWeek(modifier.startWeek, weekOffset),
+      endWeek: shiftOptionalWeek(modifier.endWeek, weekOffset)
     });
   }
+  for (const project of sourceProjects) {
+    result.researchState.projects.push({
+      ...deepClone(project),
+      id: projectIdMap.get(project.id),
+      entityId,
+      technologyId: technologyIdMap.get(project.technologyId),
+      weeklyRolls: shiftWeeklyRolls(project.weeklyRolls, weekOffset),
+      startedWeek: shiftWeek(project.startedWeek, weekOffset),
+      completedWeek: shiftOptionalWeek(project.completedWeek, weekOffset)
+    });
+  }
+
+  const completedTechnologyIds = (imported.researchState.completedTechnologyIdsByEntity[sourceEntity.id] ?? [])
+    .map(technologyId => technologyIdMap.get(technologyId))
+    .filter(Boolean);
+  result.researchState.completedTechnologyIdsByEntity[entityId] = completedTechnologyIds;
+  result.researchState.processedRequestIds = [...new Set([
+    ...result.researchState.processedRequestIds,
+    ...imported.researchState.processedRequestIds
+  ])].slice(-LIMITS.MAX_PROCESSED_REQUEST_IDS);
+  mergeImportedHistory(result, imported, {
+    sourceEntityId: sourceEntity.id,
+    entityId,
+    projectIdMap,
+    technologyIdMap,
+    modifierIdMap,
+    weekOffset,
+    nextId
+  });
 
   return {
     envelope: result,
@@ -234,7 +271,9 @@ export function mergeTreeIntoEnvelope(current, imported, { idFactory = createSta
     entityName,
     categoryCount: sourceCategories.length,
     technologyCount: sourceTechnologies.length,
-    modifierCount: sourceModifiers.length
+    modifierCount: sourceModifiers.length,
+    projectCount: sourceProjects.length,
+    completedTechnologyCount: completedTechnologyIds.length
   };
 }
 
@@ -272,7 +311,8 @@ async function confirmTreeImport(envelope) {
   const counts = {
     name: entity.name,
     categories: entity.categoryIds.length,
-    technologies: envelope.catalog.technologies.filter(item => item.entityId === entity.id).length
+    technologies: envelope.catalog.technologies.filter(item => item.entityId === entity.id).length,
+    projects: envelope.researchState.projects.filter(item => item.entityId === entity.id).length
   };
   const content = `<p>${escapeForDialog(localize("Import.TreeConfirmBody", counts))}</p><p>${escapeForDialog(localize("Import.BackupCreated"))}</p>`;
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
@@ -308,10 +348,85 @@ async function confirmFullRestore(envelope) {
   return globalThis.confirm?.(localize("Import.ConfirmBody", counts)) ?? false;
 }
 
-function remapImportedScope(modifier, categoryIdMap, technologyIdMap) {
+function remapImportedScope(modifier, categoryIdMap, technologyIdMap, projectIdMap) {
   if (modifier.scopeType === "category") return categoryIdMap.get(modifier.scopeId) ?? "";
   if (modifier.scopeType === "technology") return technologyIdMap.get(modifier.scopeId) ?? "";
+  if (modifier.scopeType === "project") return projectIdMap.get(modifier.scopeId) ?? "";
   return modifier.scopeId;
+}
+
+function treeHistoryForEntity(history, entityId) {
+  return (Array.isArray(history) ? history : []).flatMap(entry => {
+    const entities = (Array.isArray(entry?.entities) ? entry.entities : [])
+      .filter(summary => summary?.entityId === entityId);
+    return entities.length ? [{ ...deepClone(entry), entities: deepClone(entities) }] : [];
+  });
+}
+
+function requestIdsForProjects(projects) {
+  const result = new Set();
+  for (const project of projects) {
+    for (const slots of Object.values(project.weeklyRolls ?? {})) {
+      for (const record of Object.values(slots ?? {})) {
+        if (record?.requestId) result.add(record.requestId);
+        if (record?.lastRequestId) result.add(record.lastRequestId);
+      }
+    }
+  }
+  return result;
+}
+
+function shiftWeek(week, offset) {
+  return Math.max(1, Number(week) + offset);
+}
+
+function shiftOptionalWeek(week, offset) {
+  return week === null || week === undefined || week === "" ? null : shiftWeek(week, offset);
+}
+
+function shiftWeeklyRolls(weeklyRolls, offset) {
+  return Object.fromEntries(Object.entries(deepClone(weeklyRolls ?? {}))
+    .map(([week, rolls]) => [String(shiftWeek(week, offset)), rolls]));
+}
+
+function mergeImportedHistory(result, imported, {
+  sourceEntityId,
+  entityId,
+  projectIdMap,
+  technologyIdMap,
+  modifierIdMap,
+  weekOffset,
+  nextId
+}) {
+  const importedEntries = treeHistoryForEntity(imported.researchState.history, sourceEntityId)
+    .map(entry => ({
+      ...entry,
+      id: nextId("history"),
+      week: shiftWeek(entry.week, weekOffset),
+      entities: entry.entities.map(summary => ({
+        ...summary,
+        entityId,
+        projectResults: (summary.projectResults ?? []).map(projectResult => ({
+          ...projectResult,
+          projectId: projectIdMap.get(projectResult.projectId) ?? projectResult.projectId,
+          technologyId: technologyIdMap.get(projectResult.technologyId) ?? projectResult.technologyId,
+          appliedModifierIds: (projectResult.appliedModifierIds ?? [])
+            .map(modifierId => modifierIdMap.get(modifierId))
+            .filter(Boolean)
+        })),
+        completedTechnologyIds: (summary.completedTechnologyIds ?? [])
+          .map(technologyId => technologyIdMap.get(technologyId))
+          .filter(Boolean)
+      }))
+    }));
+
+  for (const entry of importedEntries) {
+    const existing = result.researchState.history.find(item => item.week === entry.week);
+    if (existing) existing.entities = [...(existing.entities ?? []), ...entry.entities];
+    else result.researchState.history.push(entry);
+  }
+  result.researchState.history.sort((left, right) => left.week - right.week);
+  result.researchState.history = result.researchState.history.slice(-result.moduleConfig.historyLimit);
 }
 
 function uniqueImportedName(existingEntities, requestedName) {

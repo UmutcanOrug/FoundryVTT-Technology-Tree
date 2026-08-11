@@ -7,7 +7,7 @@ Research Tech Tree, Foundry Virtual Tabletop v13 dünyalarında ülkelerin, ara�
 - Foundry Virtual Tabletop: v13
 - Minimum sürüm: 13
 - Doğrulanan sürüm: 13.351
-- Modül sürümü: 0.1.7
+- Modül sürümü: 0.1.8
 - Oyun sistemi: SWADE (karakter skilli zar modu için)
 - Zorunlu modül bağımlılığı: yok
 
@@ -194,17 +194,19 @@ World setting değişiklikleri bağlı istemcilere Foundry tarafından iletilir.
 
 ## Import ve export
 
-GM, üst araç çubuğunda seçili ülke, araştırma tesisi veya kişisel araştırmayı **Seçili Teknoloji Ağacını Dışa Aktar** düğmesiyle tek başına indirebilir. Bu taşınabilir ağaç dosyası kuruluşu, kategorilerini, teknolojilerini, ön koşullarını ve modifier bağlantılarını içerir; devam eden projeleri, ilerlemeyi, zar geçmişini veya tamamlanma durumunu içermez.
+GM, üst araç çubuğunda seçili ülke, araştırma tesisi veya kişisel araştırmayı **Seçili Teknoloji Ağacını Dışa Aktar** düğmesiyle tek başına indirebilir. Bu taşınabilir ağaç dosyası kuruluşun o andaki tam durumunu içerir: kategoriler, teknolojiler, ön koşullar, modifier bağlantıları ve aktiflikleri, devam eden/tamamlanmış/iptal edilmiş projeler, araştırılan RP, tamamlanma durumu, çalışanlar, araştırmacı atamaları, haftalık zar ve Benny kayıtları ile ağaca ait geçmiş özetleri birlikte saklanır.
 
 **Teknoloji Ağacı Ekle** ile içe aktarma sırasında:
 
 1. Dosya okunur ve JSON yapısı doğrulanır.
 2. Dosyanın tam olarak bir kuruluş ağacı içerdiği doğrulanır.
-3. Entity, kategori, teknoloji ve modifier ID'leri yeniden üretilir; ön koşullar, ödüller ve scope bağlantıları yeni ID'lere taşınır.
+3. Entity, kategori, teknoloji, modifier ve proje ID'leri yeniden üretilir; ön koşullar, ödüller, scope bağlantıları, tamamlanma kayıtları ve geçmiş referansları yeni ID'lere taşınır.
 4. Mevcut world verisinin otomatik yedeği indirilir.
-5. GM onayı alındıktan sonra ağaç mevcut katalog silinmeden eklenir.
+5. GM onayı alındıktan sonra ağaç bütün proje ve ilerleme durumuyla mevcut katalog silinmeden eklenir.
 
-Parse, doğrulama veya ID/reference hatasında mevcut world verisi değiştirilmez. Aynı ağaç tekrar içe aktarılırsa bağımsız yeni ID'lerle ikinci bir kopya oluşturulur; aynı isim varsa ayırt edici “İçe Aktarıldı” eki kullanılır. Başarılı import sonrasında eklenen ağaç seçilir ve açık pencereler yeni veriyi gösterir.
+İçe aktarılan ağacın canlı haftası mevcut dünyanın haftasıyla hizalanır. Dünya daha ilerideyse projelerin başlangıç/tamamlanma haftaları, zar kayıtları, geçmişi ve süreli modifierları aynı fark kadar ileri kaydırılır. Dosya daha yeni bir haftadaysa veri kaybını önlemek için dünyanın hafta sayısı dosyanın haftasına ilerletilir.
+
+Parse, doğrulama veya ID/reference hatasında mevcut world verisi değiştirilmez. Aynı isimde bir ağaç içe aktarılırsa bağımsız yeni ID'lerle ikinci bir kopya oluşturulur ve ayırt edici “İçe Aktarıldı” eki kullanılır. Canlı araştırmacı atamalarının mevcut aktif projelerle çakışması gibi world bütünlüğünü ihlal eden bir durum varsa import güvenle reddedilir ve otomatik yedek korunur. Başarılı import sonrasında eklenen ağaç seçilir ve açık pencereler yeni veriyi gösterir.
 
 Araç çubuğundaki **Tam Yedeği Dışa Aktar** bütün katalog, proje durumu, geçmiş ve yapılandırmayı saklar. **Tam Yedeği Geri Yükle** ise açıkça ayrı ve yıkıcı bir işlemdir; mevcut dünya verisini seçilen tam yedekle değiştirir. Böylece günlük tek-ağaç aktarımı ile tam dünya kurtarma akışı birbirine karışmaz.
 
@@ -212,7 +214,7 @@ Araç çubuğundaki **Tam Yedeği Dışa Aktar** bütün katalog, proje durumu, 
 
 Katalog, araştırma durumu, module config ve schema version world-scoped Foundry settings içinde saklanır. Son seçili entity, aktif sekmeler ve pan/zoom görünümü client-scoped ayarda tutulur.
 
-Önemli dünya değişikliklerinden ve özellikle modül güncellemesinden önce Foundry dünya yedeği alınması önerilir. Tam JSON yedeği bütün modül verisini saklar; tek-ağaç export dosyası ise yeni veya mevcut bir dünyaya eklenebilen taşınabilir bir teknoloji ağacıdır.
+Önemli dünya değişikliklerinden ve özellikle modül güncellemesinden önce Foundry dünya yedeği alınması önerilir. Tam JSON yedeği bütün modül verisini saklar; tek-ağaç export dosyası ise seçilen ağacın tam anlık durumunu yeni veya mevcut bir dünyaya eklenebilir biçimde saklar.
 
 ## Geliştirme
 
@@ -231,7 +233,7 @@ npm run package
 Varsayılan çıktı:
 
 ```text
-research-tech-tree-v0.1.7.zip
+research-tech-tree-v0.1.8.zip
 ```
 
 Paket komutu gerekli manifest girişlerini kontrol eder, yalnızca runtime/dokümantasyon dosyalarını ZIP'e ekler ve SHA-256 özetini ekrana yazar.
@@ -304,7 +306,7 @@ Testleri temiz bir Foundry v13.351 dünyasında, bir GM ve en az bir oyuncu iste
 ### Kalıcılık ve aktarım
 
 - Sayfayı yenileyin ve bütün katalog/proje verisinin korunduğunu doğrulayın.
-- Seçili ağacı dışa aktarın; başka ağaçların bulunduğu dünyaya içe aktarıp mevcut ağaçların korunarak yeni ağacın eklendiğini doğrulayın.
+- İlerleme, tamamlanmış teknoloji, atanmış araştırmacı, haftalık zar ve proje modifierı bulunan seçili ağacı dışa aktarın; başka ağaçların bulunduğu dünyaya içe aktarıp bütün anlık durumun geri geldiğini ve mevcut ağaçların korunduğunu doğrulayın.
 - Tam yedek dışa aktarıp ayrı **Tam Yedeği Geri Yükle** akışıyla geri yükleyin.
 - Bozuk JSON ve geçersiz referanslı import deneyin; mevcut verinin değişmediğini kontrol edin.
 - Geçmiş limitini düşürüp eski kayıtların sınırlandığını doğrulayın.
