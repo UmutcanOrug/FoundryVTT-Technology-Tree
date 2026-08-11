@@ -23,6 +23,7 @@ import { validateEnvelopeIntegrity } from "../scripts/store/integrity.mjs";
 import { migrateWorldEnvelope } from "../scripts/store/migrations.mjs";
 import { ProjectService } from "../scripts/services/project-service.mjs";
 import { modifierIsCurrentlyActive } from "../scripts/services/modifier-service.mjs";
+import { buildResearchContext } from "../scripts/app/context.mjs";
 
 function userCollection(...users) {
   return {
@@ -467,6 +468,65 @@ test("prerequisite navigation marks the destination for a seven-second highlight
   assert.match(template, /is-highlighted/u);
   assert.match(application, /7000/u);
   assert.match(stylesheet, /rtt-technology-highlight/u);
+});
+
+test("completed prerequisites remain marked in technology details", async () => {
+  const gm = { id: "gm", isGM: true, active: true };
+  setGame({ users: [gm] });
+  globalThis.game.user = gm;
+  globalThis.game.users.activeGM = gm;
+  const world = migrateWorldEnvelope({
+    schemaVersion: 5,
+    catalog: {
+      entities: [{ id: "entity-1", name: "Academy", categoryIds: ["category-1"] }],
+      categories: [{ id: "category-1", name: "Science", entityIds: ["entity-1"] }],
+      technologies: [
+        { id: "tech-completed", entityId: "entity-1", categoryId: "category-1", name: "Completed" },
+        { id: "tech-pending", entityId: "entity-1", categoryId: "category-1", name: "Pending" },
+        {
+          id: "tech-target", entityId: "entity-1", categoryId: "category-1", name: "Target",
+          prerequisiteIds: ["tech-completed", "tech-pending"]
+        }
+      ],
+      modifiers: []
+    },
+    researchState: {
+      completedTechnologyIdsByEntity: { "entity-1": ["tech-completed"] }
+    },
+    moduleConfig: {}
+  });
+  const uiState = {
+    selectedEntityId: "entity-1",
+    activeTabByEntity: { "entity-1": "category-1" },
+    viewByTree: {},
+    selectedTechnologyId: "tech-target",
+    highlightedTechnologyId: "",
+    searchQuery: "",
+    editMode: false,
+    editor: null,
+    fullscreen: false
+  };
+  const context = await buildResearchContext({
+    store: { snapshot: () => structuredClone(world) },
+    uiState,
+    weekService: { getMissingRolls: () => [] }
+  });
+
+  assert.equal(context.details.prerequisites.find(item => item.id === "tech-completed").completed, true);
+  assert.equal(context.details.prerequisites.find(item => item.id === "tech-pending").completed, false);
+  const template = readFileSync(new URL("../templates/research-app.hbs", import.meta.url), "utf8");
+  const stylesheet = readFileSync(new URL("../styles/research-tech-tree.css", import.meta.url), "utf8");
+  assert.match(template, /if completed.*is-completed/u);
+  assert.match(stylesheet, /rtt-chip-link\.is-completed/u);
+});
+
+test("category tab scroll position is restored after application renders", () => {
+  const template = readFileSync(new URL("../templates/research-app.hbs", import.meta.url), "utf8");
+  const application = readFileSync(new URL("../scripts/app/research-app.mjs", import.meta.url), "utf8");
+  assert.match(template, /data-rtt-category-tabs data-entity-id/u);
+  assert.match(application, /categoryTabScrollByEntity/u);
+  assert.match(application, /restoreCategoryTabScroll/u);
+  assert.match(application, /categoryTabs\.scrollLeft = rememberedScrollLeft/u);
 });
 
 test("schema v3 migration derives success for existing SWADE roll records", () => {

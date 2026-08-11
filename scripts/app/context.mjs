@@ -11,6 +11,7 @@ import {
   localize
 } from "../constants.mjs";
 import {
+  getCompletedSet,
   getProjectForTechnology,
   getTechnologyStatus,
   prerequisitesMet,
@@ -270,6 +271,7 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
   const cost = effectiveResearchCost(technology.researchPointCost, modifiers);
   const progress = project?.progress ?? (status === TECHNOLOGY_STATUS.COMPLETED ? cost : 0);
   const prerequisiteIds = technology.prerequisiteIds;
+  const completedTechnologyIds = getCompletedSet(researchState, entity.id);
   const unlockIds = unlockedTechnologyIds(technology.id, catalog.technologies.filter(item => item.entityId === entity.id));
   const safeTechnologyIds = new Set(catalog.technologies
     .filter(candidate => canViewTechnology(user, entity, candidate, researchState))
@@ -357,7 +359,14 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
     researchSkillLabel: configuredSkillLabel,
     progress,
     progressPercent: Math.max(0, Math.min(100, Math.round((progress / Math.max(1, cost)) * 100))),
-    prerequisites: prerequisiteIds.filter(id => safeTechnologyIds.has(id)).map(id => catalog.technologies.find(item => item.id === id)).filter(Boolean),
+    prerequisites: prerequisiteIds
+      .filter(id => safeTechnologyIds.has(id))
+      .map(id => catalog.technologies.find(item => item.id === id))
+      .filter(Boolean)
+      .map(prerequisite => ({
+        ...prerequisite,
+        completed: completedTechnologyIds.has(prerequisite.id)
+      })),
     unlocks: unlockIds.filter(id => safeTechnologyIds.has(id)).map(id => catalog.technologies.find(item => item.id === id)).filter(Boolean),
     modifiers: modifiers.map(modifierContext),
     project: project ? {

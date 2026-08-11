@@ -68,6 +68,7 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
     this.highlightTimer = null;
     this.savedPosition = null;
     this.actionBusy = false;
+    this.categoryTabScrollByEntity = new Map();
   }
 
   async _prepareContext(options) {
@@ -84,6 +85,7 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
     this.listenerController?.abort();
     this.listenerController = new AbortController();
     this.#activateListeners(this.element, this.listenerController.signal);
+    this.#restoreCategoryTabScroll(this.element);
     this.element.classList.toggle("rtt-is-fullscreen", this.uiState.fullscreen);
   }
 
@@ -110,6 +112,22 @@ export class ResearchTechTreeApplication extends HandlebarsApplicationMixin(Appl
     const viewport = root.querySelector("[data-tree-viewport]");
     if (viewport) this.#activateViewport(viewport, root, signal);
     for (const node of root.querySelectorAll("[data-tech-node]")) this.#activateNodeDrag(node, root, signal);
+
+    const categoryTabs = root.querySelector("[data-rtt-category-tabs]");
+    if (categoryTabs) {
+      categoryTabs.addEventListener("scroll", () => {
+        const entityId = categoryTabs.dataset.entityId;
+        if (entityId) this.categoryTabScrollByEntity.set(entityId, categoryTabs.scrollLeft);
+      }, { signal, passive: true });
+    }
+  }
+
+  #restoreCategoryTabScroll(root) {
+    const categoryTabs = root.querySelector("[data-rtt-category-tabs]");
+    const entityId = categoryTabs?.dataset.entityId;
+    if (!categoryTabs || !entityId) return;
+    const rememberedScrollLeft = this.categoryTabScrollByEntity.get(entityId);
+    if (Number.isFinite(rememberedScrollLeft)) categoryTabs.scrollLeft = rememberedScrollLeft;
   }
 
   async #onClick(event) {

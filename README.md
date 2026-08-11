@@ -7,7 +7,7 @@ Research Tech Tree, Foundry Virtual Tabletop v13 dünyalarında ülkelerin, ara�
 - Foundry Virtual Tabletop: v13
 - Minimum sürüm: 13
 - Doğrulanan sürüm: 13.351
-- Modül sürümü: 0.1.8
+- Modül sürümü: 0.1.9
 - Oyun sistemi: SWADE (karakter skilli zar modu için)
 - Zorunlu modül bağımlılığı: yok
 
@@ -233,7 +233,7 @@ npm run package
 Varsayılan çıktı:
 
 ```text
-research-tech-tree-v0.1.8.zip
+research-tech-tree-v0.1.9.zip
 ```
 
 Paket komutu gerekli manifest girişlerini kontrol eder, yalnızca runtime/dokümantasyon dosyalarını ZIP'e ekler ve SHA-256 özetini ekrana yazar.
@@ -272,6 +272,8 @@ Testleri temiz bir Foundry v13.351 dünyasında, bir GM ve en az bir oyuncu iste
 - Kategori sekmelerini ve sol listedeki entityleri yeniden sıralayın.
 - File Picker ile entity ve teknoloji ikonlarını değiştirin.
 - Başka kategorideki bir teknolojiyi ön koşul olarak atayın.
+- Tamamlanan ön koşulların teknoloji detaylarında kalıcı olarak sarı gösterildiğini doğrulayın.
+- Yatay kategori sekme çubuğunu kaydırıp bir teknoloji seçin; çubuğun aynı konumda kaldığını doğrulayın.
 - A↔B döngüsü oluşturmayı deneyin ve kaydın reddedildiğini doğrulayın.
 - Kartı sürükleyip bırakın; sayfayı yenileyince konumun korunduğunu kontrol edin.
 - İkinci istemcide kart koordinatının güncellendiğini doğrulayın.

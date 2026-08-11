@@ -2,6 +2,17 @@
 
 Research Tech Tree follows [Semantic Versioning](https://semver.org/). Dates use the `YYYY-MM-DD` format.
 
+## [0.1.9] - 2026-08-11
+
+### Added
+
+- Completed technologies in a selected technology's prerequisite list now retain a permanent gold highlight.
+
+### Fixed
+
+- Selecting a technology or switching categories no longer resets the horizontal position of the category tab bar.
+- Category tab scroll positions are remembered independently for each research organization while the application remains open.
+
 ## [0.1.8] - 2026-08-11
 
 ### Changed

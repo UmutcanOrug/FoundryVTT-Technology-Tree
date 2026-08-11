@@ -662,6 +662,13 @@
   cursor: pointer;
 }
 
+.rtt-chip-list > .rtt-chip-link.is-completed {
+  color: #ffe29b;
+  border-color: var(--rtt-gold);
+  background: rgb(199 151 70 / 22%);
+  box-shadow: inset 0 0 0 1px rgb(255 217 128 / 12%);
+}
+
 .rtt-chip-list > .rtt-chip-link:hover,
 .rtt-chip-list > .rtt-chip-link:focus-visible {
   color: #fff0c7;
