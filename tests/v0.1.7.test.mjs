@@ -547,6 +547,10 @@ test("unlocks and modifier activators expose navigable highlighted technology li
           prerequisiteIds: ["tech-source"]
         },
         {
+          id: "tech-researched", entityId: "entity-1", categoryId: "category-2", name: "Researched",
+          prerequisiteIds: ["tech-source"]
+        },
+        {
           id: "tech-locked", entityId: "entity-1", categoryId: "category-2", name: "Still Locked",
           prerequisiteIds: ["tech-source", "tech-blocker"]
         }
@@ -557,7 +561,7 @@ test("unlocks and modifier activators expose navigable highlighted technology li
       }]
     },
     researchState: {
-      completedTechnologyIdsByEntity: { "entity-1": ["tech-source"] }
+      completedTechnologyIdsByEntity: { "entity-1": ["tech-source", "tech-researched"] }
     },
     moduleConfig: {}
   });
@@ -577,8 +581,27 @@ test("unlocks and modifier activators expose navigable highlighted technology li
     weekService: { getMissingRolls: () => [] }
   });
 
-  assert.equal(context.details.unlocks.find(item => item.id === "tech-unlocked").unlocked, true);
-  assert.equal(context.details.unlocks.find(item => item.id === "tech-locked").unlocked, false);
+  assert.deepEqual(
+    {
+      available: context.details.unlocks.find(item => item.id === "tech-unlocked").available,
+      completed: context.details.unlocks.find(item => item.id === "tech-unlocked").completed
+    },
+    { available: true, completed: false }
+  );
+  assert.deepEqual(
+    {
+      available: context.details.unlocks.find(item => item.id === "tech-researched").available,
+      completed: context.details.unlocks.find(item => item.id === "tech-researched").completed
+    },
+    { available: false, completed: true }
+  );
+  assert.deepEqual(
+    {
+      available: context.details.unlocks.find(item => item.id === "tech-locked").available,
+      completed: context.details.unlocks.find(item => item.id === "tech-locked").completed
+    },
+    { available: false, completed: false }
+  );
   assert.deepEqual(context.overview.bonuses[0].unlockTechnologies, [{
     id: "tech-source",
     name: "Source",
@@ -589,8 +612,9 @@ test("unlocks and modifier activators expose navigable highlighted technology li
   const stylesheet = readFileSync(new URL("../styles/research-tech-tree.css", import.meta.url), "utf8");
   assert.match(template, /details\.unlocks.*data-highlight-technology="true"/su);
   assert.match(template, /unlockTechnologies\.length.*data-highlight-technology="true"/su);
-  assert.match(template, /if unlocked.*is-unlocked/u);
-  assert.match(stylesheet, /rtt-chip-link\.is-unlocked/u);
+  assert.match(template, /if available.*is-available.*if completed.*is-completed/u);
+  assert.match(stylesheet, /rtt-chip-link\.is-available/u);
+  assert.match(stylesheet, /rtt-chip-link\.is-completed/u);
   assert.match(stylesheet, /rtt-modifier-unlock/u);
 });
 

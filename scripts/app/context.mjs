@@ -373,7 +373,7 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
       .filter(Boolean)
       .map(unlock => ({
         ...unlock,
-        unlocked: technologyIsUnlocked(unlock, researchState, user)
+        ...technologyUnlockState(unlock, researchState, user)
       })),
     modifiers: modifiers.map(modifierContext),
     project: project ? {
@@ -607,9 +607,12 @@ function modifierContext(modifier, {
   };
 }
 
-function technologyIsUnlocked(technology, researchState, user) {
+function technologyUnlockState(technology, researchState, user) {
   const status = getTechnologyStatus(technology, researchState, { isGM: Boolean(user?.isGM) });
-  return status !== TECHNOLOGY_STATUS.LOCKED && status !== TECHNOLOGY_STATUS.HIDDEN;
+  return {
+    available: status === TECHNOLOGY_STATUS.AVAILABLE,
+    completed: status === TECHNOLOGY_STATUS.COMPLETED
+  };
 }
 
 function statusLabel(status) {

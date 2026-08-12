@@ -2,6 +2,13 @@
 
 Research Tech Tree follows [Semantic Versioning](https://semver.org/). Dates use the `YYYY-MM-DD` format.
 
+## [0.2.1] - 2026-08-13
+
+### Changed
+
+- Technologies with the Available status are now highlighted in green when listed under Unlocks.
+- Researched technologies retain the gold highlight under Unlocks, clearly distinguishing them from technologies that are merely available.
+
 ## [0.2.0] - 2026-08-13
 
 ### Added

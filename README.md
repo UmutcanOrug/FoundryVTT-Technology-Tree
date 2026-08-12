@@ -7,7 +7,7 @@ Research Tech Tree, Foundry Virtual Tabletop v13 dünyalarında ülkelerin, ara�
 - Foundry Virtual Tabletop: v13
 - Minimum sürüm: 13
 - Doğrulanan sürüm: 13.351
-- Modül sürümü: 0.2.0
+- Modül sürümü: 0.2.1
 - Oyun sistemi: SWADE (karakter skilli zar modu için)
 - Zorunlu modül bağımlılığı: yok
 
@@ -235,7 +235,7 @@ npm run package
 Varsayılan çıktı:
 
 ```text
-research-tech-tree-v0.2.0.zip
+research-tech-tree-v0.2.1.zip
 ```
 
 Paket komutu gerekli manifest girişlerini kontrol eder, yalnızca runtime/dokümantasyon dosyalarını ZIP'e ekler ve SHA-256 özetini ekrana yazar.
