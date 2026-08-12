@@ -367,7 +367,14 @@ async function buildTechnologyDetails({ technologyId, catalog, researchState, mo
         ...prerequisite,
         completed: completedTechnologyIds.has(prerequisite.id)
       })),
-    unlocks: unlockIds.filter(id => safeTechnologyIds.has(id)).map(id => catalog.technologies.find(item => item.id === id)).filter(Boolean),
+    unlocks: unlockIds
+      .filter(id => safeTechnologyIds.has(id))
+      .map(id => catalog.technologies.find(item => item.id === id))
+      .filter(Boolean)
+      .map(unlock => ({
+        ...unlock,
+        unlocked: technologyIsUnlocked(unlock, researchState, user)
+      })),
     modifiers: modifiers.map(modifierContext),
     project: project ? {
       ...project,
@@ -415,16 +422,23 @@ function buildOverviewContext(entity, catalog, state, user) {
       completedCount: entitySummary.completedTechnologyIds?.length ?? 0
     };
   }).filter(Boolean).slice(0, 8);
+  const modifierContexts = modifiers.map(modifier => modifierContext(modifier, {
+    currentlyActive: activeModifiers.includes(modifier),
+    unlockTechnologies: catalog.technologies
+      .filter(technology => technology.entityId === entity.id
+        && technology.onComplete.activateModifierIds.includes(modifier.id)
+        && canViewTechnology(user, entity, technology, state))
+      .map(technology => ({
+        id: technology.id,
+        name: technology.name,
+        categoryId: technology.categoryId,
+        completed: getCompletedSet(state, entity.id).has(technology.id)
+      }))
+  }));
   return {
-    modifiers: modifiers.map(modifier => modifierContext(modifier, {
-      currentlyActive: activeModifiers.includes(modifier)
-    })),
-    bonuses: modifiers.filter(modifierIsBuff).map(modifier => modifierContext(modifier, {
-      currentlyActive: activeModifiers.includes(modifier)
-    })),
-    penalties: modifiers.filter(modifier => !modifierIsBuff(modifier)).map(modifier => modifierContext(modifier, {
-      currentlyActive: activeModifiers.includes(modifier)
-    })),
+    modifiers: modifierContexts,
+    bonuses: modifierContexts.filter(modifier => modifier.buff),
+    penalties: modifierContexts.filter(modifier => !modifier.buff),
     projects,
     completedCount,
     capacityText: `${projects.length} / ${entity.maxConcurrentProjects}`,
@@ -572,7 +586,10 @@ async function buildEditorContext({ editorState, selectedEntity, activeCategory,
   return null;
 }
 
-function modifierContext(modifier, { currentlyActive = Boolean(modifier.active) } = {}) {
+function modifierContext(modifier, {
+  currentlyActive = Boolean(modifier.active),
+  unlockTechnologies = []
+} = {}) {
   const description = modifier.description || localize("Modifier.GeneratedDescription", {
     amount: modifierMagnitudeText(modifier),
     target: localize(`Modifier.Target.${modifier.target}`),
@@ -585,8 +602,14 @@ function modifierContext(modifier, { currentlyActive = Boolean(modifier.active) 
     buff: modifierIsBuff(modifier),
     kindLabel: modifierIsBuff(modifier) ? localize("Modifier.Buff") : localize("Modifier.Debuff"),
     currentlyActive,
-    activityLabel: localize(currentlyActive ? "Modifier.ActiveStatus" : "Modifier.PassiveStatus")
+    activityLabel: localize(currentlyActive ? "Modifier.ActiveStatus" : "Modifier.PassiveStatus"),
+    unlockTechnologies
   };
+}
+
+function technologyIsUnlocked(technology, researchState, user) {
+  const status = getTechnologyStatus(technology, researchState, { isGM: Boolean(user?.isGM) });
+  return status !== TECHNOLOGY_STATUS.LOCKED && status !== TECHNOLOGY_STATUS.HIDDEN;
 }
 
 function statusLabel(status) {

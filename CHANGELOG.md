@@ -2,6 +2,19 @@
 
 Research Tech Tree follows [Semantic Versioning](https://semver.org/). Dates use the `YYYY-MM-DD` format.
 
+## [0.2.0] - 2026-08-13
+
+### Added
+
+- Technology links in the Unlocks section now navigate to the target category, center the target technology, and highlight it for seven seconds.
+- Technologies that are available, in progress, or completed are permanently highlighted in gold when listed under Unlocks; targets still blocked by other prerequisites retain the default style.
+- Bonus and penalty cards now list every visible technology that activates them directly below the card description.
+- Activating-technology links on bonus and penalty cards use the same category navigation, centering, and seven-second highlight behavior.
+
+### Changed
+
+- Prerequisite, Unlocks, bonus, and penalty technology references now share a consistent interactive chip presentation.
+
 ## [0.1.9] - 2026-08-11
 
 ### Added

@@ -662,7 +662,8 @@
   cursor: pointer;
 }
 
-.rtt-chip-list > .rtt-chip-link.is-completed {
+.rtt-chip-list > .rtt-chip-link.is-completed,
+.rtt-chip-list > .rtt-chip-link.is-unlocked {
   color: #ffe29b;
   border-color: var(--rtt-gold);
   background: rgb(199 151 70 / 22%);
@@ -739,6 +740,21 @@
   color: var(--rtt-muted);
   font-size: 0.74rem;
   line-height: 1.4;
+}
+
+.rtt-modifier .rtt-modifier-unlock {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid rgb(255 255 255 / 9%);
+}
+
+.rtt-modifier .rtt-modifier-unlock > small {
+  display: block;
+  margin-bottom: 4px;
+  color: #aebac5;
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .rtt-modifier > div {

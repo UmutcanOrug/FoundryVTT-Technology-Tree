@@ -7,7 +7,7 @@ Research Tech Tree, Foundry Virtual Tabletop v13 dünyalarında ülkelerin, ara�
 - Foundry Virtual Tabletop: v13
 - Minimum sürüm: 13
 - Doğrulanan sürüm: 13.351
-- Modül sürümü: 0.1.9
+- Modül sürümü: 0.2.0
 - Oyun sistemi: SWADE (karakter skilli zar modu için)
 - Zorunlu modül bağımlılığı: yok
 
@@ -178,6 +178,8 @@ Modifier yönetiminde şu alanlar kullanılır:
 
 Modifier editöründeki **Açan teknoloji** alanıyla aynı araştırma kuruluşundaki herhangi bir teknoloji seçilebilir. Modifier, seçilen teknoloji tamamlanana kadar pasif kalır ve teknoloji tamamlandığında normal `onComplete` akışıyla otomatik etkinleşir. Teknoloji zaten tamamlanmışsa yeni bağlantı hemen etkinleşir. Aynı unlock ilişkisi teknoloji editöründeki **Tamamlanınca aç** seçeneklerinden de yönetilebilir.
 
+Overview ekranındaki bonus ve ceza kartları, kendilerini etkinleştiren görünür teknolojileri açıklamanın hemen altında gösterir. Bu teknoloji bağlantılarına basıldığında ilgili kategori açılır, hedef teknoloji ortalanır ve yedi saniye parlar.
+
 ## İzinler ve çok oyunculu kullanım
 
 GM bütün entity ve teknolojileri görür, katalog ve proje durumunu değiştirir, haftayı ilerletir, modifierları yönetir ve import/export yapar.
@@ -233,7 +235,7 @@ npm run package
 Varsayılan çıktı:
 
 ```text
-research-tech-tree-v0.1.9.zip
+research-tech-tree-v0.2.0.zip
 ```
 
 Paket komutu gerekli manifest girişlerini kontrol eder, yalnızca runtime/dokümantasyon dosyalarını ZIP'e ekler ve SHA-256 özetini ekrana yazar.
@@ -273,6 +275,8 @@ Testleri temiz bir Foundry v13.351 dünyasında, bir GM ve en az bir oyuncu iste
 - File Picker ile entity ve teknoloji ikonlarını değiştirin.
 - Başka kategorideki bir teknolojiyi ön koşul olarak atayın.
 - Tamamlanan ön koşulların teknoloji detaylarında kalıcı olarak sarı gösterildiğini doğrulayın.
+- Bir teknolojinin **Açtıkları** bağlantısına basıp doğru kategoriye geçildiğini, hedefin ortalandığını ve yedi saniye parladığını doğrulayın.
+- Açılmış teknolojilerin **Açtıkları** listesinde sarı, başka ön koşul bekleyenlerin normal renkte göründüğünü doğrulayın.
 - Yatay kategori sekme çubuğunu kaydırıp bir teknoloji seçin; çubuğun aynı konumda kaldığını doğrulayın.
 - A↔B döngüsü oluşturmayı deneyin ve kaydın reddedildiğini doğrulayın.
 - Kartı sürükleyip bırakın; sayfayı yenileyince konumun korunduğunu kontrol edin.
@@ -304,6 +308,7 @@ Testleri temiz bir Foundry v13.351 dünyasında, bir GM ve en az bir oyuncu iste
 - Teknolojiyi tamamlayın; completion haftasını, yeni açılan teknolojiyi, bildirimi ve sohbet mesajını kontrol edin.
 - Completion ödülünün ilgili modifierı etkinleştirdiğini/devre dışı bıraktığını doğrulayın.
 - Overview ekranında son hafta özetini, bonus/ceza açıklamalarını ve aktif/pasif renklerini kontrol edin.
+- Bonus ve ceza kartlarının altındaki etkinleştirici teknoloji bağlantısına basıp hedef teknolojiye gidildiğini ve parlama animasyonunun çalıştığını kontrol edin.
 
 ### Kalıcılık ve aktarım
 

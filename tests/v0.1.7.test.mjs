@@ -520,6 +520,80 @@ test("completed prerequisites remain marked in technology details", async () => 
   assert.match(stylesheet, /rtt-chip-link\.is-completed/u);
 });
 
+test("unlocks and modifier activators expose navigable highlighted technology links", async () => {
+  const gm = { id: "gm", isGM: true, active: true };
+  setGame({ users: [gm] });
+  globalThis.game.user = gm;
+  globalThis.game.users.activeGM = gm;
+  const world = migrateWorldEnvelope({
+    schemaVersion: 5,
+    catalog: {
+      entities: [{
+        id: "entity-1", name: "Institute", categoryIds: ["category-1", "category-2"],
+        modifierIds: ["modifier-1"]
+      }],
+      categories: [
+        { id: "category-1", name: "Foundations", entityIds: ["entity-1"] },
+        { id: "category-2", name: "Applications", entityIds: ["entity-1"] }
+      ],
+      technologies: [
+        {
+          id: "tech-source", entityId: "entity-1", categoryId: "category-1", name: "Source",
+          onComplete: { activateModifierIds: ["modifier-1"] }
+        },
+        { id: "tech-blocker", entityId: "entity-1", categoryId: "category-1", name: "Blocker" },
+        {
+          id: "tech-unlocked", entityId: "entity-1", categoryId: "category-2", name: "Unlocked",
+          prerequisiteIds: ["tech-source"]
+        },
+        {
+          id: "tech-locked", entityId: "entity-1", categoryId: "category-2", name: "Still Locked",
+          prerequisiteIds: ["tech-source", "tech-blocker"]
+        }
+      ],
+      modifiers: [{
+        id: "modifier-1", entityId: "entity-1", name: "Research Bonus",
+        active: true, operation: "add", target: "weeklyTotal", value: 1
+      }]
+    },
+    researchState: {
+      completedTechnologyIdsByEntity: { "entity-1": ["tech-source"] }
+    },
+    moduleConfig: {}
+  });
+  const context = await buildResearchContext({
+    store: { snapshot: () => structuredClone(world) },
+    uiState: {
+      selectedEntityId: "entity-1",
+      activeTabByEntity: { "entity-1": "category-1" },
+      viewByTree: {},
+      selectedTechnologyId: "tech-source",
+      highlightedTechnologyId: "",
+      searchQuery: "",
+      editMode: false,
+      editor: null,
+      fullscreen: false
+    },
+    weekService: { getMissingRolls: () => [] }
+  });
+
+  assert.equal(context.details.unlocks.find(item => item.id === "tech-unlocked").unlocked, true);
+  assert.equal(context.details.unlocks.find(item => item.id === "tech-locked").unlocked, false);
+  assert.deepEqual(context.overview.bonuses[0].unlockTechnologies, [{
+    id: "tech-source",
+    name: "Source",
+    categoryId: "category-1",
+    completed: true
+  }]);
+  const template = readFileSync(new URL("../templates/research-app.hbs", import.meta.url), "utf8");
+  const stylesheet = readFileSync(new URL("../styles/research-tech-tree.css", import.meta.url), "utf8");
+  assert.match(template, /details\.unlocks.*data-highlight-technology="true"/su);
+  assert.match(template, /unlockTechnologies\.length.*data-highlight-technology="true"/su);
+  assert.match(template, /if unlocked.*is-unlocked/u);
+  assert.match(stylesheet, /rtt-chip-link\.is-unlocked/u);
+  assert.match(stylesheet, /rtt-modifier-unlock/u);
+});
+
 test("category tab scroll position is restored after application renders", () => {
   const template = readFileSync(new URL("../templates/research-app.hbs", import.meta.url), "utf8");
   const application = readFileSync(new URL("../scripts/app/research-app.mjs", import.meta.url), "utf8");
